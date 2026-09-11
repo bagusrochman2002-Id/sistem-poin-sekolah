@@ -18,7 +18,7 @@
   .badge { padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:600; display:inline-block; }
   ::-webkit-scrollbar{width:8px;height:8px;} ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
   .bar-track{background:#e2e8f0;border-radius:6px;overflow:hidden;height:18px;}
-  .bar-fill{background:#1e3a5f;height:100%;color:#fff;font-size:11px;display:flex;align-items:center;padding-left:6px;white-space:nowrap;}
+  .bar-fill{background:#1e3a5f;height:100%;color:#fff;font-size:11px;display:flex;align-items:center;padding-left:6px;white-space:nowrap;width:0;transition:width .6s cubic-bezier(.22,.9,.32,1);}
   #printArea{max-height:0;overflow:hidden;}
   @media print{
     body *{visibility:hidden;}
@@ -34,8 +34,6 @@
   .sidebar-link:hover .ic{transform:scale(1.06);}
   #sidebar{width:230px;flex-shrink:0;}
   #sidebarHandle,#sidebarSheetHeader,#sidebarFab{display:none;}
-
-  /* ===== MOBILE: sidebar jadi bottom sheet + FAB toggle ===== */
   @media (max-width:900px){
     #sidebar{
       position:fixed;left:0;right:0;bottom:0;top:auto;
@@ -68,9 +66,39 @@
     #sidebarFab.open .fabIcon{transform:rotate(90deg);}
     main{padding-bottom:92px;}
   }
+
+  /* ===== ANIMASI: toast, modal, transisi tab ===== */
+  @keyframes toastIn{from{opacity:0;transform:translateX(24px) scale(.96);}to{opacity:1;transform:translateX(0) scale(1);}}
+  @keyframes toastOut{from{opacity:1;transform:translateX(0) scale(1);}to{opacity:0;transform:translateX(24px) scale(.96);}}
+  .toast-in{animation:toastIn .25s ease forwards;}
+  .toast-out{animation:toastOut .2s ease forwards;}
+  @keyframes tabFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  #tab-dashboard:not(.hidden),#tab-siswa:not(.hidden),#tab-catat:not(.hidden),#tab-riwayat:not(.hidden),
+  #tab-master:not(.hidden),#tab-surat:not(.hidden),#tab-rekapkelas:not(.hidden),#tab-statistik:not(.hidden),
+  #tab-akun:not(.hidden),#tab-pengaturan:not(.hidden){animation:tabFadeIn .28s ease;}
 </style>
 </head>
 <body class="bg-slate-100 min-h-screen">
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-sm pointer-events-none"></div>
+
+<!-- ===== MODAL KONFIRMASI KUSTOM ===== -->
+<div id="confirmModal" class="fixed inset-0 z-[90] hidden items-center justify-center px-4" style="background:rgba(15,23,42,.5);backdrop-filter:blur(2px);">
+  <div id="confirmModalBox" class="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 scale-95 opacity-0 transition-all duration-150">
+    <div class="flex items-start gap-3 mb-4">
+      <div id="confirmModalIcon" class="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 bg-amber-100 text-amber-600">⚠️</div>
+      <div class="min-w-0 pt-1">
+        <h3 id="confirmModalTitle" class="font-bold text-slate-800 leading-snug">Konfirmasi</h3>
+        <p id="confirmModalMsg" class="text-sm text-slate-500 mt-1 leading-relaxed"></p>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2">
+      <button id="confirmModalCancel" class="px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition">Batal</button>
+      <button id="confirmModalOk" class="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 text-white hover:bg-red-700 hover:shadow-md active:scale-95 transition">Ya, Lanjutkan</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== MODAL LOGIN ===== -->
 <div id="modalLogin" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4" style="background:linear-gradient(135deg,#0f2540 0%,#1e3a5f 55%,#254a75 100%);">
@@ -203,11 +231,13 @@
       <p class="relative text-xs md:text-sm text-blue-100/80 mt-4 max-w-2xl">Pantau kedisiplinan siswa, catat pelanggaran, dan kelola poin dengan mudah dari satu tempat.</p>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5" id="statCards"></div>
-    <div class="bg-white rounded-xl shadow p-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <h2 class="font-bold text-slate-800 mb-1">📊 Daftar Siswa &amp; Sisa Poin</h2>
+      <p class="text-xs text-slate-400 -mt-1 mb-3">Cari, filter, dan urutkan siswa berdasarkan sisa poin kedisiplinan.</p>
       <div class="flex flex-wrap gap-3 items-center mb-3">
-        <input id="dashSearch" oninput="renderDashboard()" placeholder="Cari nama / NISN..." class="border rounded-lg px-3 py-2 text-sm flex-1 min-w-[180px]">
-        <select id="dashKelas" onchange="renderDashboard()" class="border rounded-lg px-3 py-2 text-sm"></select>
-        <select id="dashSort" onchange="renderDashboard()" class="border rounded-lg px-3 py-2 text-sm">
+        <input id="dashSearch" oninput="renderDashboard()" placeholder="Cari nama / NISN..." class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm flex-1 min-w-[180px]">
+        <select id="dashKelas" onchange="renderDashboard()" class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm"></select>
+        <select id="dashSort" onchange="renderDashboard()" class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm">
           <option value="poinAsc">Sisa Poin Terendah</option>
           <option value="poinDesc">Sisa Poin Tertinggi</option>
           <option value="nama">Nama A-Z</option>
@@ -215,7 +245,7 @@
       </div>
       <div class="overflow-x-auto max-h-[55vh]">
         <table id="dashboardTable"><thead><tr>
-          <th>Nama</th><th>NISN</th><th>Kelas</th><th>Sisa Poin</th><th>Status</th><th>Tindak Lanjut</th>
+          <th class="text-xs uppercase tracking-wide">Nama</th><th class="text-xs uppercase tracking-wide">NISN</th><th class="text-xs uppercase tracking-wide">Kelas</th><th class="text-xs uppercase tracking-wide">Sisa Poin</th><th class="text-xs uppercase tracking-wide">Status</th><th class="text-xs uppercase tracking-wide">Tindak Lanjut</th>
         </tr></thead><tbody></tbody></table>
       </div>
     </div>
@@ -223,25 +253,26 @@
 
   <!-- ===== DATA SISWA ===== -->
   <section id="tab-siswa" class="hidden">
-    <div class="bg-white rounded-xl shadow p-4 mb-4 edit-only">
-      <h2 class="font-bold text-slate-800 mb-3">Tambah Siswa</h2>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4 edit-only">
+      <h2 class="font-bold text-slate-800 mb-1">➕ Tambah Siswa</h2>
+      <p class="text-xs text-slate-400 -mt-1 mb-3">Tambahkan satu per satu, atau tempel banyak baris sekaligus di bawah.</p>
       <div class="grid md:grid-cols-4 gap-3">
-        <input id="sNama" placeholder="Nama lengkap" class="border rounded-lg px-3 py-2 text-sm">
-        <input id="sNisn" placeholder="NISN / NIS" class="border rounded-lg px-3 py-2 text-sm">
-        <input id="sKelas" placeholder="Kelas (mis. XII TJKT 1)" class="border rounded-lg px-3 py-2 text-sm">
-        <button onclick="tambahSiswa()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d]">+ Tambah Siswa</button>
+        <input id="sNama" placeholder="Nama lengkap" class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm">
+        <input id="sNisn" placeholder="NISN / NIS" class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm">
+        <input id="sKelas" placeholder="Kelas (mis. XII TJKT 1)" class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm">
+        <button onclick="tambahSiswa()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d] hover:shadow-md active:scale-95 transition">+ Tambah Siswa</button>
       </div>
       <p class="text-xs text-slate-500 mt-2">Bisa juga tempel banyak baris sekaligus (format: Nama, NISN, Kelas per baris) →</p>
-      <textarea id="sBulk" rows="3" placeholder="Contoh:&#10;Budi Santoso, 0051234567, XII TJKT 1&#10;Siti Aminah, 0051234568, XII TJKT 1" class="w-full border rounded-lg px-3 py-2 text-sm mt-1"></textarea>
-      <button onclick="tambahSiswaBulk()" class="mt-2 bg-slate-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-700">Import Banyak Siswa</button>
+      <textarea id="sBulk" rows="3" placeholder="Contoh:&#10;Budi Santoso, 0051234567, XII TJKT 1&#10;Siti Aminah, 0051234568, XII TJKT 1" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm mt-1"></textarea>
+      <button onclick="tambahSiswaBulk()" class="mt-2 bg-slate-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-700 hover:shadow-md active:scale-95 transition">Import Banyak Siswa</button>
     </div>
-    <div class="bg-white rounded-xl shadow p-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
       <div class="flex flex-wrap gap-3 items-center mb-3">
-        <h2 class="font-bold text-slate-800">Daftar Siswa</h2>
-        <input id="siswaSearch" oninput="renderSiswaTable()" placeholder="Cari..." class="border rounded-lg px-3 py-2 text-sm ml-auto">
+        <h2 class="font-bold text-slate-800">👤 Daftar Siswa</h2>
+        <input id="siswaSearch" oninput="renderSiswaTable()" placeholder="Cari..." class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm ml-auto">
       </div>
       <div class="overflow-x-auto max-h-[55vh]">
-        <table><thead><tr><th>Nama</th><th>NISN</th><th>Kelas</th><th>Sisa Poin</th><th class="edit-only" id="thAksiSiswa">Aksi</th></tr></thead>
+        <table><thead><tr><th class="text-xs uppercase tracking-wide">Nama</th><th class="text-xs uppercase tracking-wide">NISN</th><th class="text-xs uppercase tracking-wide">Kelas</th><th class="text-xs uppercase tracking-wide">Sisa Poin</th><th class="edit-only text-xs uppercase tracking-wide" id="thAksiSiswa">Aksi</th></tr></thead>
         <tbody id="siswaTableBody"></tbody></table>
       </div>
     </div>
@@ -249,43 +280,44 @@
 
   <!-- ===== CATAT PELANGGARAN ===== -->
   <section id="tab-catat" class="hidden">
-    <div class="bg-white rounded-xl shadow p-4 max-w-2xl mx-auto">
-      <h2 class="font-bold text-slate-800 mb-3">Catat Pelanggaran Baru</h2>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 max-w-2xl mx-auto">
+      <h2 class="font-bold text-slate-800 mb-1">✏️ Catat Pelanggaran Baru</h2>
+      <p class="text-xs text-slate-400 -mt-1 mb-3">Pilih siswa dan jenis pelanggaran, poin akan terpotong otomatis.</p>
       <label class="text-sm font-medium text-slate-600">Siswa</label>
-      <select id="cSiswa" class="w-full border rounded-lg px-3 py-2 mt-1 mb-3"></select>
+      <select id="cSiswa" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3"></select>
 
       <label class="text-sm font-medium text-slate-600">Jenis Pelanggaran</label>
-      <select id="cJenis" onchange="updatePreviewPoin()" class="w-full border rounded-lg px-3 py-2 mt-1 mb-3"></select>
+      <select id="cJenis" onchange="updatePreviewPoin()" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3"></select>
 
       <div id="cPreview" class="text-sm bg-slate-50 border rounded-lg p-3 mb-3 hidden"></div>
 
       <label class="text-sm font-medium text-slate-600">Tanggal Kejadian</label>
-      <input id="cTanggal" type="date" class="w-full border rounded-lg px-3 py-2 mt-1 mb-3">
+      <input id="cTanggal" type="date" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3">
 
       <label class="text-sm font-medium text-slate-600">Catatan Tambahan (opsional)</label>
-      <textarea id="cCatatan" rows="2" class="w-full border rounded-lg px-3 py-2 mt-1 mb-4" placeholder="Kronologi singkat, saksi, dsb."></textarea>
+      <textarea id="cCatatan" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-4" placeholder="Kronologi singkat, saksi, dsb."></textarea>
 
-      <button onclick="simpanPelanggaran()" class="w-full bg-red-600 text-white py-2.5 rounded-lg font-semibold hover:bg-red-700">Simpan Pelanggaran</button>
+      <button onclick="simpanPelanggaran()" class="w-full bg-red-600 text-white py-2.5 rounded-lg font-semibold hover:bg-red-700 hover:shadow-md active:scale-[0.98] transition">Simpan Pelanggaran</button>
     </div>
   </section>
 
   <!-- ===== RIWAYAT ===== -->
   <section id="tab-riwayat" class="hidden">
-    <div class="bg-white rounded-xl shadow p-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
       <div class="flex flex-wrap gap-3 items-center mb-3">
-        <h2 class="font-bold text-slate-800">Riwayat Pelanggaran</h2>
-        <input id="rSearch" oninput="renderRiwayat()" placeholder="Cari nama siswa..." class="border rounded-lg px-3 py-2 text-sm">
-        <select id="rKategori" onchange="renderRiwayat()" class="border rounded-lg px-3 py-2 text-sm">
+        <h2 class="font-bold text-slate-800">🕒 Riwayat Pelanggaran</h2>
+        <input id="rSearch" oninput="renderRiwayat()" placeholder="Cari nama siswa..." class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm">
+        <select id="rKategori" onchange="renderRiwayat()" class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm">
           <option value="">Semua Kategori</option>
           <option value="Ringan">Ringan</option>
           <option value="Sedang">Sedang</option>
           <option value="Berat">Berat</option>
         </select>
-        <button onclick="exportExcel()" class="ml-auto bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-green-700">📊 Export Excel</button>
+        <button onclick="exportExcel()" class="ml-auto bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-green-700 hover:shadow-md active:scale-95 transition">📊 Export Excel</button>
       </div>
       <div class="overflow-x-auto max-h-[60vh]">
         <table><thead><tr>
-          <th>Tanggal</th><th>Siswa</th><th>Kelas</th><th>Kategori</th><th>Pelanggaran</th><th>Poin</th><th>Catatan</th><th>Dicatat oleh</th><th class="edit-only" id="thAksiRiwayat">Aksi</th>
+          <th class="text-xs uppercase tracking-wide">Tanggal</th><th class="text-xs uppercase tracking-wide">Siswa</th><th class="text-xs uppercase tracking-wide">Kelas</th><th class="text-xs uppercase tracking-wide">Kategori</th><th class="text-xs uppercase tracking-wide">Pelanggaran</th><th class="text-xs uppercase tracking-wide">Poin</th><th class="text-xs uppercase tracking-wide">Catatan</th><th class="text-xs uppercase tracking-wide">Dicatat oleh</th><th class="edit-only text-xs uppercase tracking-wide" id="thAksiRiwayat">Aksi</th>
         </tr></thead><tbody id="riwayatTableBody"></tbody></table>
       </div>
     </div>
@@ -293,22 +325,22 @@
 
   <!-- ===== MASTER POIN ===== -->
   <section id="tab-master" class="hidden">
-    <div class="bg-white rounded-xl shadow p-4 mb-4">
-      <h2 class="font-bold text-slate-800 mb-3">Master Jenis Pelanggaran & Poin</h2>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
+      <h2 class="font-bold text-slate-800 mb-3">📋 Master Jenis Pelanggaran &amp; Poin</h2>
       <div class="overflow-x-auto max-h-[60vh]">
-        <table><thead><tr><th>No</th><th>Kategori</th><th>Jenis Pelanggaran</th><th>Poin</th></tr></thead>
+        <table><thead><tr><th class="text-xs uppercase tracking-wide">No</th><th class="text-xs uppercase tracking-wide">Kategori</th><th class="text-xs uppercase tracking-wide">Jenis Pelanggaran</th><th class="text-xs uppercase tracking-wide">Poin</th></tr></thead>
         <tbody id="masterTableBody"></tbody></table>
       </div>
     </div>
-    <div class="bg-white rounded-xl shadow p-4">
-      <h2 class="font-bold text-slate-800 mb-3">Ketentuan Tindak Lanjut Berdasarkan Sisa Poin</h2>
-      <table><thead><tr><th>Sisa Poin</th><th>Tindak Lanjut Pembinaan</th></tr></thead>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <h2 class="font-bold text-slate-800 mb-3">⚖️ Ketentuan Tindak Lanjut Berdasarkan Sisa Poin</h2>
+      <table><thead><tr><th class="text-xs uppercase tracking-wide">Sisa Poin</th><th class="text-xs uppercase tracking-wide">Tindak Lanjut Pembinaan</th></tr></thead>
         <tbody>
-          <tr><td>100 – 76</td><td>Pembinaan lisan oleh Wali Kelas, dicatat dalam buku kasus.</td></tr>
-          <tr><td>75 – 51</td><td>Panggilan orang tua/wali tahap 1 + Surat Peringatan (SP) 1 dari Guru BK.</td></tr>
-          <tr><td>50 – 26</td><td>Panggilan orang tua/wali tahap 2 + SP 2, pembinaan intensif oleh Guru BK dan Kesiswaan.</td></tr>
-          <tr><td>25 – 1</td><td>Surat Peringatan (SP) 3, skorsing sesuai keputusan sekolah, dan ancaman dikembalikan kepada orang tua/wali.</td></tr>
-          <tr><td>0</td><td>Dikembalikan kepada orang tua/wali sesuai hasil rapat dewan guru dan kepala sekolah.</td></tr>
+          <tr class="hover:bg-blue-50 transition-colors"><td>100 – 76</td><td>Pembinaan lisan oleh Wali Kelas, dicatat dalam buku kasus.</td></tr>
+          <tr class="hover:bg-blue-50 transition-colors"><td>75 – 51</td><td>Panggilan orang tua/wali tahap 1 + Surat Peringatan (SP) 1 dari Guru BK.</td></tr>
+          <tr class="hover:bg-blue-50 transition-colors"><td>50 – 26</td><td>Panggilan orang tua/wali tahap 2 + SP 2, pembinaan intensif oleh Guru BK dan Kesiswaan.</td></tr>
+          <tr class="hover:bg-blue-50 transition-colors"><td>25 – 1</td><td>Surat Peringatan (SP) 3, skorsing sesuai keputusan sekolah, dan ancaman dikembalikan kepada orang tua/wali.</td></tr>
+          <tr class="hover:bg-blue-50 transition-colors"><td>0</td><td>Dikembalikan kepada orang tua/wali sesuai hasil rapat dewan guru dan kepala sekolah.</td></tr>
         </tbody>
       </table>
     </div>
@@ -317,15 +349,15 @@
   <!-- ===== CETAK SURAT ===== -->
   <section id="tab-surat" class="hidden">
     <div class="grid md:grid-cols-2 gap-4">
-      <div class="bg-white rounded-xl shadow p-4">
-        <h2 class="font-bold text-slate-800 mb-3">Buat Surat</h2>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+        <h2 class="font-bold text-slate-800 mb-3">📝 Buat Surat</h2>
         <label class="text-sm font-medium text-slate-600">Siswa</label>
-        <select id="suSiswa" onchange="suggestSurat()" class="w-full border rounded-lg px-3 py-2 mt-1 mb-3"></select>
+        <select id="suSiswa" onchange="suggestSurat()" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3"></select>
 
         <div id="suSaran" class="text-xs bg-slate-50 border rounded-lg p-2 mb-3 hidden"></div>
 
         <label class="text-sm font-medium text-slate-600">Jenis Surat</label>
-        <select id="suJenis" class="w-full border rounded-lg px-3 py-2 mt-1 mb-3">
+        <select id="suJenis" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3">
           <option value="lisan">Catatan Pembinaan Lisan (Wali Kelas)</option>
           <option value="sp1">Panggilan Orang Tua Tahap 1 + Surat Peringatan (SP) 1</option>
           <option value="sp2">Panggilan Orang Tua Tahap 2 + Surat Peringatan (SP) 2</option>
@@ -334,17 +366,17 @@
         </select>
 
         <label class="text-sm font-medium text-slate-600">Nomor Surat (opsional)</label>
-        <input id="suNomor" class="w-full border rounded-lg px-3 py-2 mt-1 mb-3" placeholder="Contoh: 421/SP-1/VII/2026">
+        <input id="suNomor" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3" placeholder="Contoh: 421/SP-1/VII/2026">
 
         <label class="text-sm font-medium text-slate-600">Tanggal Surat</label>
-        <input id="suTanggal" type="date" class="w-full border rounded-lg px-3 py-2 mt-1 mb-4">
+        <input id="suTanggal" type="date" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-4">
 
-        <button onclick="buatSurat()" class="w-full bg-[#1e3a5f] text-white py-2.5 rounded-lg font-semibold hover:bg-[#16304d]">Tampilkan Surat</button>
+        <button onclick="buatSurat()" class="w-full bg-[#1e3a5f] text-white py-2.5 rounded-lg font-semibold hover:bg-[#16304d] hover:shadow-md active:scale-[0.98] transition">Tampilkan Surat</button>
       </div>
-      <div class="bg-white rounded-xl shadow p-4">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
         <div class="flex justify-between items-center mb-3">
-          <h2 class="font-bold text-slate-800">Pratinjau</h2>
-          <button onclick="doPrint(document.getElementById('suratPreview').innerHTML)" class="bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-green-700">🖨️ Cetak</button>
+          <h2 class="font-bold text-slate-800">👁️ Pratinjau</h2>
+          <button onclick="doPrint(document.getElementById('suratPreview').innerHTML)" class="bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-green-700 hover:shadow-md active:scale-95 transition">🖨️ Cetak</button>
         </div>
         <div id="suratPreview" class="border rounded-lg p-4 text-sm text-slate-500 min-h-[300px]">Pilih siswa &amp; jenis surat, lalu klik "Tampilkan Surat".</div>
       </div>
@@ -353,11 +385,11 @@
 
   <!-- ===== REKAP KELAS ===== -->
   <section id="tab-rekapkelas" class="hidden">
-    <div class="bg-white rounded-xl shadow p-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
       <div class="flex flex-wrap gap-3 items-center mb-4">
-        <h2 class="font-bold text-slate-800">Rekap per Kelas</h2>
-        <select id="rkKelas" onchange="renderRekapKelas()" class="border rounded-lg px-3 py-2 text-sm"></select>
-        <button onclick="doPrint(document.getElementById('rekapKelasBody').innerHTML)" class="ml-auto bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-green-700">🖨️ Cetak</button>
+        <h2 class="font-bold text-slate-800">🏫 Rekap per Kelas</h2>
+        <select id="rkKelas" onchange="renderRekapKelas()" class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm"></select>
+        <button onclick="doPrint(document.getElementById('rekapKelasBody').innerHTML)" class="ml-auto bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-green-700 hover:shadow-md active:scale-95 transition">🖨️ Cetak</button>
       </div>
       <div id="rekapKelasBody"></div>
     </div>
@@ -366,38 +398,38 @@
   <!-- ===== STATISTIK ===== -->
   <section id="tab-statistik" class="hidden">
     <div class="grid md:grid-cols-3 gap-3 mb-4" id="statistikRingkas"></div>
-    <div class="bg-white rounded-xl shadow p-4 mb-4">
-      <h2 class="font-bold text-slate-800 mb-3">Pelanggaran Terbanyak</h2>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
+      <h2 class="font-bold text-slate-800 mb-3">🔥 Pelanggaran Terbanyak</h2>
       <div id="statistikTerbanyak" class="space-y-2"></div>
     </div>
-    <div class="bg-white rounded-xl shadow p-4">
-      <h2 class="font-bold text-slate-800 mb-3">Total per Kategori</h2>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <h2 class="font-bold text-slate-800 mb-3">📊 Total per Kategori</h2>
       <div id="statistikKategori" class="space-y-2"></div>
     </div>
   </section>
 
   <!-- ===== KELOLA AKUN (khusus Admin) ===== -->
   <section id="tab-akun" class="hidden">
-    <div class="bg-white rounded-xl shadow p-4 mb-4 max-w-2xl">
-      <h2 class="font-bold text-slate-800 mb-1">Tambah / Ubah Akun</h2>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4 max-w-2xl">
+      <h2 class="font-bold text-slate-800 mb-1">🔑 Tambah / Ubah Akun</h2>
       <p class="text-xs text-slate-500 mb-3">
         1) Buat login akunnya dulu di Supabase Dashboard → Authentication → Users → Add user (isi email &amp; password).
         2) Salin User UID akun tersebut, lalu tempel di bawah ini beserta nama &amp; perannya.
       </p>
       <label class="text-sm font-medium text-slate-600">User UID (dari Supabase Authentication → Users)</label>
-      <input id="akUid" class="w-full border rounded-lg px-3 py-2 mt-1 mb-3 font-mono text-xs" placeholder="contoh: a1b2c3d4-e5f6-...">
+      <input id="akUid" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3 font-mono text-xs" placeholder="contoh: a1b2c3d4-e5f6-...">
       <label class="text-sm font-medium text-slate-600">Nama Lengkap</label>
-      <input id="akNama" class="w-full border rounded-lg px-3 py-2 mt-1 mb-3" placeholder="Nama lengkap beserta gelar">
+      <input id="akNama" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3" placeholder="Nama lengkap beserta gelar">
       <label class="text-sm font-medium text-slate-600">Peran</label>
-      <select id="akRole" class="w-full border rounded-lg px-3 py-2 mt-1 mb-4">
+      <select id="akRole" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-4">
         <option>Kesiswaan</option><option>BK</option><option>Kepala Sekolah</option><option>Wali Kelas</option><option>Admin</option>
       </select>
-      <button onclick="simpanProfil()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d]">Simpan Akun</button>
+      <button onclick="simpanProfil()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d] hover:shadow-md active:scale-95 transition">Simpan Akun</button>
     </div>
-    <div class="bg-white rounded-xl shadow p-4">
-      <h2 class="font-bold text-slate-800 mb-3">Daftar Akun Terdaftar</h2>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <h2 class="font-bold text-slate-800 mb-3">📇 Daftar Akun Terdaftar</h2>
       <div class="overflow-x-auto max-h-[50vh]">
-        <table><thead><tr><th>Nama</th><th>Peran</th><th>User UID</th><th>Aksi</th></tr></thead>
+        <table><thead><tr><th class="text-xs uppercase tracking-wide">Nama</th><th class="text-xs uppercase tracking-wide">Peran</th><th class="text-xs uppercase tracking-wide">User UID</th><th class="text-xs uppercase tracking-wide">Aksi</th></tr></thead>
         <tbody id="akunTableBody"></tbody></table>
       </div>
     </div>
@@ -405,27 +437,27 @@
 
   <!-- ===== PENGATURAN ===== -->
   <section id="tab-pengaturan" class="hidden">
-    <div class="bg-white rounded-xl shadow p-4 mb-4 max-w-xl">
-      <h2 class="font-bold text-slate-800 mb-3">Info Sekolah (untuk Kop Surat)</h2>
-      <input id="setNamaSekolah" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Nama Sekolah">
-      <input id="setAlamatSekolah" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Alamat Sekolah">
-      <input id="setKepsek" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Nama Kepala Sekolah">
-      <button onclick="simpanSekolah()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d]">Simpan Info Sekolah</button>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4 max-w-xl">
+      <h2 class="font-bold text-slate-800 mb-3">🏫 Info Sekolah (untuk Kop Surat)</h2>
+      <input id="setNamaSekolah" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mb-3" placeholder="Nama Sekolah">
+      <input id="setAlamatSekolah" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mb-3" placeholder="Alamat Sekolah">
+      <input id="setKepsek" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mb-3" placeholder="Nama Kepala Sekolah">
+      <button onclick="simpanSekolah()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d] hover:shadow-md active:scale-95 transition">Simpan Info Sekolah</button>
     </div>
-    <div class="bg-white rounded-xl shadow p-4 mb-4 max-w-xl">
-      <h2 class="font-bold text-slate-800 mb-3">Info Semester Aktif</h2>
-      <input id="setSemester" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Contoh: Ganjil 2026/2027">
-      <button onclick="simpanSemester()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d]">Simpan Nama Semester</button>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4 max-w-xl">
+      <h2 class="font-bold text-slate-800 mb-3">🗓️ Info Semester Aktif</h2>
+      <input id="setSemester" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mb-3" placeholder="Contoh: Ganjil 2026/2027">
+      <button onclick="simpanSemester()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d] hover:shadow-md active:scale-95 transition">Simpan Nama Semester</button>
     </div>
-    <div class="bg-white rounded-xl shadow p-4 mb-4 max-w-xl border border-amber-300">
-      <h2 class="font-bold text-amber-700 mb-2">Reset Poin Semester Baru</h2>
+    <div class="bg-amber-50 rounded-2xl shadow-sm p-5 mb-4 max-w-xl border border-amber-300">
+      <h2 class="font-bold text-amber-700 mb-2">⚠️ Reset Poin Semester Baru</h2>
       <p class="text-sm text-slate-600 mb-3">Mengembalikan poin SEMUA siswa menjadi 100. Riwayat pelanggaran lama tetap tersimpan dan tetap bisa dilihat di tab Riwayat (ditandai semester lama).</p>
-      <button onclick="resetSemester()" class="bg-amber-500 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-amber-600">Reset Poin ke 100 (Semester Baru)</button>
+      <button onclick="resetSemester()" class="bg-amber-500 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-amber-600 hover:shadow-md active:scale-95 transition">Reset Poin ke 100 (Semester Baru)</button>
     </div>
-    <div class="bg-white rounded-xl shadow p-4 max-w-xl">
-      <h2 class="font-bold text-slate-800 mb-3">Migrasi Data Lama (opsional)</h2>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 max-w-xl">
+      <h2 class="font-bold text-slate-800 mb-3">📦 Migrasi Data Lama (opsional)</h2>
       <p class="text-sm text-slate-600 mb-3">Kalau sebelumnya sudah punya file backup JSON dari versi lokal (localStorage), import di sini — datanya akan ditambahkan ke database Supabase.</p>
-      <label class="bg-slate-200 text-slate-700 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-300 cursor-pointer inline-block">
+      <label class="bg-slate-200 text-slate-700 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-300 hover:shadow-md active:scale-95 transition cursor-pointer inline-block">
         Import Backup JSON Lama
         <input type="file" accept=".json" class="hidden" onchange="importBackup(event)">
       </label>
@@ -503,7 +535,7 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const ROLE_EDIT = ['Kesiswaan', 'Wali Kelas', 'Admin'];
 function canEdit(){ return !!(DB.user && ROLE_EDIT.includes(DB.user.role)); }
 function requireEdit(){
-  if(!canEdit()){ alert('Akun Anda ("'+(DB.user?DB.user.role:'-')+'") hanya memiliki akses lihat (read-only).'); return false; }
+  if(!canEdit()){ toast('Akun Anda ("'+(DB.user?DB.user.role:'-')+'") hanya memiliki akses lihat (read-only).', 'warning'); return false; }
   return true;
 }
 
@@ -550,7 +582,7 @@ async function loginUser(){
 async function afterLogin(session){
   const profile = await fetchProfile(session.user.id, session.user.email);
   if(!profile){
-    alert('Akun ini belum memiliki profil (nama & peran). Hubungi Admin untuk melengkapi data di tabel "profiles".');
+    toast('Akun ini belum memiliki profil (nama & peran). Hubungi Admin untuk melengkapi data di tabel "profiles".', 'error');
     await db.auth.signOut();
     return;
   }
@@ -595,7 +627,7 @@ function updateUserBadge(){
 }
 function isAdmin(){ return !!(DB.user && DB.user.role === 'Admin'); }
 function requireAdmin(){
-  if(!isAdmin()){ alert('Hanya akun dengan peran "Admin" yang bisa mengakses halaman ini.'); return false; }
+  if(!isAdmin()){ toast('Hanya akun dengan peran "Admin" yang bisa mengakses halaman ini.', 'warning'); return false; }
   return true;
 }
 function applyRoleUI(){
@@ -623,6 +655,53 @@ async function fetchAllData(){
   document.getElementById('setNamaSekolah').value = DB.sekolah.nama;
   document.getElementById('setAlamatSekolah').value = DB.sekolah.alamat;
   document.getElementById('setKepsek').value = DB.sekolah.kepsek;
+}
+
+// ================= TOAST & KONFIRMASI (UI) =================
+function toast(message, type='info', duration=3800){
+  const box = document.getElementById('toastContainer');
+  const styles = {
+    success:{bg:'bg-green-600', icon:'✅'},
+    error:{bg:'bg-red-600', icon:'⛔'},
+    warning:{bg:'bg-amber-500', icon:'⚠️'},
+    info:{bg:'bg-[#1e3a5f]', icon:'ℹ️'},
+  }[type] || {bg:'bg-[#1e3a5f]', icon:'ℹ️'};
+  const el = document.createElement('div');
+  el.className = `toast-in pointer-events-auto ${styles.bg} text-white rounded-xl shadow-lg px-4 py-3 flex items-start gap-2.5 text-sm`;
+  el.innerHTML = `<span class="text-base leading-none mt-0.5">${styles.icon}</span><span class="flex-1 leading-snug whitespace-pre-line">${message}</span><button class="opacity-70 hover:opacity-100 leading-none text-xs mt-0.5">✕</button>`;
+  const removeToast = ()=>{
+    el.classList.remove('toast-in'); el.classList.add('toast-out');
+    setTimeout(()=> el.remove(), 200);
+  };
+  el.querySelector('button').onclick = removeToast;
+  box.appendChild(el);
+  setTimeout(removeToast, duration);
+}
+function confirmModal(message, opts={}){
+  return new Promise(resolve=>{
+    const modal = document.getElementById('confirmModal');
+    const box = document.getElementById('confirmModalBox');
+    document.getElementById('confirmModalTitle').textContent = opts.title || 'Konfirmasi';
+    document.getElementById('confirmModalMsg').textContent = message;
+    const icon = document.getElementById('confirmModalIcon');
+    const okBtn = document.getElementById('confirmModalOk');
+    const danger = opts.danger !== false;
+    icon.className = 'w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 '+(danger?'bg-red-100 text-red-600':'bg-amber-100 text-amber-600');
+    icon.textContent = danger ? '🗑️' : '⚠️';
+    okBtn.textContent = opts.okText || (danger ? 'Ya, Hapus' : 'Ya, Lanjutkan');
+    okBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold text-white hover:shadow-md active:scale-95 transition '+(danger?'bg-red-600 hover:bg-red-700':'bg-[#1e3a5f] hover:bg-[#16304d]');
+    modal.classList.remove('hidden'); modal.classList.add('flex');
+    requestAnimationFrame(()=>{ box.classList.remove('scale-95','opacity-0'); });
+    const close = (result)=>{
+      box.classList.add('scale-95','opacity-0');
+      setTimeout(()=>{ modal.classList.add('hidden'); modal.classList.remove('flex'); }, 150);
+      cancelBtn.onclick = null; okBtn.onclick = null;
+      resolve(result);
+    };
+    const cancelBtn = document.getElementById('confirmModalCancel');
+    cancelBtn.onclick = ()=>close(false);
+    okBtn.onclick = ()=>close(true);
+  });
 }
 
 // ================= SIDEBAR (MOBILE) =================
@@ -681,10 +760,25 @@ function renderStatCards(){
     {label:'Kritis/Dikembalikan', val: buckets.Kritis+buckets.Dikembalikan, color:'text-red-600'},
   ];
   document.getElementById('statCards').innerHTML = cards.map(c=>`
-    <div class="bg-white rounded-xl shadow p-3 text-center">
-      <div class="text-2xl font-bold ${c.color}">${c.val}</div>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 text-center hover:shadow-md hover:-translate-y-0.5 transition">
+      <div class="text-2xl font-bold ${c.color} count-num" data-target="${c.val}">0</div>
       <div class="text-xs text-slate-500 mt-1">${c.label}</div>
     </div>`).join('');
+  animateCounts('#statCards');
+}
+function animateCounts(scopeSelector){
+  document.querySelectorAll(scopeSelector+' .count-num').forEach(el=>{
+    const target = parseInt(el.dataset.target,10)||0;
+    const duration = 650;
+    const start = performance.now();
+    function step(now){
+      const p = Math.min((now-start)/duration, 1);
+      const eased = 1 - Math.pow(1-p, 3);
+      el.textContent = Math.round(eased*target);
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
 }
 function populateKelasFilter(){
   const sel = document.getElementById('dashKelas');
@@ -706,7 +800,7 @@ function renderDashboard(){
   const tbody = document.querySelector('#dashboardTable tbody');
   tbody.innerHTML = list.map(s=>{
     const tl = tindakLanjut(s.poin);
-    return `<tr>
+    return `<tr class="hover:bg-blue-50 transition-colors">
       <td class="font-medium">${s.nama}</td><td>${s.nisn}</td><td>${s.kelas}</td>
       <td class="font-bold">${s.poin}</td>
       <td><span class="badge ${tl.warna}">${tl.label}</span></td>
@@ -721,13 +815,13 @@ async function tambahSiswa(){
   const nama = document.getElementById('sNama').value.trim();
   const nisn = document.getElementById('sNisn').value.trim();
   const kelas = document.getElementById('sKelas').value.trim();
-  if(!nama||!kelas){ alert('Nama dan kelas wajib diisi'); return; }
-  if(nama.length < 3){ alert('Nama terlalu pendek'); return; }
+  if(!nama||!kelas){ toast('Nama dan kelas wajib diisi', 'warning'); return; }
+  if(nama.length < 3){ toast('Nama terlalu pendek', 'warning'); return; }
   if(nisn && DB.siswa.some(s=>s.nisn && s.nisn===nisn)){
-    if(!confirm(`NISN "${nisn}" sudah dipakai oleh siswa lain. Tetap simpan?`)) return;
+    if(!(await confirmModal(`NISN "${nisn}" sudah dipakai oleh siswa lain. Tetap simpan?`, {danger:false, okText:'Tetap Simpan'}))) return;
   }
   const { data, error } = await db.from('siswa').insert({nama, nisn, kelas, poin:100}).select().single();
-  if(error){ alert('Gagal menyimpan: '+error.message); return; }
+  if(error){ toast('Gagal menyimpan: '+error.message, 'error'); return; }
   DB.siswa.push({id:data.id, nama:data.nama, nisn:data.nisn||'', kelas:data.kelas, poin:data.poin});
   document.getElementById('sNama').value=''; document.getElementById('sNisn').value=''; document.getElementById('sKelas').value='';
   renderSiswaTable(); renderDashboard();
@@ -743,18 +837,18 @@ async function tambahSiswaBulk(){
   if(!rows.length) return;
   const nisnDobel = rows.filter(r=>r.nisn).map(r=>r.nisn)
     .filter((v,i,arr)=> arr.indexOf(v)!==i || DB.siswa.some(s=>s.nisn===v));
-  if(nisnDobel.length && !confirm(`NISN berikut terdeteksi dobel/sudah ada: ${[...new Set(nisnDobel)].join(', ')}. Tetap lanjutkan import?`)) return;
+  if(nisnDobel.length && !(await confirmModal(`NISN berikut terdeteksi dobel/sudah ada: ${[...new Set(nisnDobel)].join(', ')}. Tetap lanjutkan import?`, {danger:false, okText:'Tetap Lanjutkan'}))) return;
   const { data, error } = await db.from('siswa').insert(rows).select();
-  if(error){ alert('Gagal mengimpor: '+error.message); return; }
+  if(error){ toast('Gagal mengimpor: '+error.message, 'error'); return; }
   data.forEach(d=> DB.siswa.push({id:d.id, nama:d.nama, nisn:d.nisn||'', kelas:d.kelas, poin:d.poin}));
   document.getElementById('sBulk').value='';
   renderSiswaTable(); renderDashboard();
 }
 async function hapusSiswa(id){
   if(!requireEdit()) return;
-  if(!confirm('Hapus siswa ini beserta riwayat pelanggarannya?')) return;
+  if(!(await confirmModal('Hapus siswa ini beserta riwayat pelanggarannya?'))) return;
   const { error } = await db.from('siswa').delete().eq('id', id);
-  if(error){ alert('Gagal menghapus: '+error.message); return; }
+  if(error){ toast('Gagal menghapus: '+error.message, 'error'); return; }
   DB.siswa = DB.siswa.filter(s=>s.id!==id);
   DB.log = DB.log.filter(l=>l.siswaId!==id);
   renderSiswaTable(); renderDashboard();
@@ -762,9 +856,9 @@ async function hapusSiswa(id){
 function renderSiswaTable(){
   const q = document.getElementById('siswaSearch').value.toLowerCase();
   const list = DB.siswa.filter(s=>s.nama.toLowerCase().includes(q)||s.nisn.includes(q)||s.kelas.toLowerCase().includes(q));
-  const aksiTd = canEdit() ? (s)=>`<td><button onclick="hapusSiswa('${s.id}')" class="text-red-600 text-xs font-semibold hover:underline">Hapus</button></td>` : ()=>'';
+  const aksiTd = canEdit() ? (s)=>`<td><button onclick="hapusSiswa('${s.id}')" class="text-red-600 text-xs font-semibold hover:underline transition">Hapus</button></td>` : ()=>'';
   document.getElementById('siswaTableBody').innerHTML = list.map(s=>`
-    <tr>
+    <tr class="hover:bg-blue-50 transition-colors">
       <td>${s.nama}</td><td>${s.nisn}</td><td>${s.kelas}</td><td class="font-bold">${s.poin}</td>
       ${aksiTd(s)}
     </tr>`).join('') || '<tr><td colspan="5" class="text-center text-slate-400 py-6">Belum ada data siswa</td></tr>';
@@ -806,10 +900,10 @@ async function simpanPelanggaran(){
   const catatan = document.getElementById('cCatatan').value.trim();
   const siswa = DB.siswa.find(s=>s.id===siswaId);
   const m = MASTER.find(x=>x.kode===kode);
-  if(!siswa){ alert('Pilih siswa terlebih dahulu (tambahkan data siswa jika belum ada)'); return; }
-  if(!m){ alert('Pilih jenis pelanggaran terlebih dahulu'); return; }
-  if(!tanggal){ alert('Tanggal kejadian wajib diisi'); return; }
-  if(tanggal > new Date().toISOString().slice(0,10)){ alert('Tanggal kejadian tidak boleh di masa depan'); return; }
+  if(!siswa){ toast('Pilih siswa terlebih dahulu (tambahkan data siswa jika belum ada)', 'warning'); return; }
+  if(!m){ toast('Pilih jenis pelanggaran terlebih dahulu', 'warning'); return; }
+  if(!tanggal){ toast('Tanggal kejadian wajib diisi', 'warning'); return; }
+  if(tanggal > new Date().toISOString().slice(0,10)){ toast('Tanggal kejadian tidak boleh di masa depan', 'warning'); return; }
 
   const btn = document.querySelector('#tab-catat button[onclick="simpanPelanggaran()"]');
   if(btn){ btn.disabled = true; btn.textContent = 'Menyimpan...'; }
@@ -824,7 +918,7 @@ async function simpanPelanggaran(){
   });
 
   if(btn){ btn.disabled = false; btn.textContent = 'Simpan Pelanggaran'; }
-  if(error){ alert('Gagal menyimpan: '+error.message); return; }
+  if(error){ toast('Gagal menyimpan: '+error.message, 'error'); return; }
 
   const result = data[0];
   siswa.poin = result.poin_baru;
@@ -832,7 +926,7 @@ async function simpanPelanggaran(){
     kode:m.kode, jenis:m.jenis, kategori:m.kategori, poin:m.poin, catatan,
     pencatat:DB.user.nama, role:DB.user.role, semester:DB.semester});
   const tl = tindakLanjut(siswa.poin);
-  alert(`Tersimpan.\n${siswa.nama} — sisa poin: ${siswa.poin}\nStatus: ${tl.label}\n${tl.desc}`);
+  toast(`Tersimpan. ${siswa.nama} — sisa poin: ${siswa.poin} (${tl.label})`, 'success');
   document.getElementById('cCatatan').value='';
   renderCatatForm(); renderDashboard();
 }
@@ -842,9 +936,9 @@ function renderRiwayat(){
   const q = document.getElementById('rSearch').value.toLowerCase();
   const kat = document.getElementById('rKategori').value;
   const list = DB.log.filter(l => l.namaSiswa.toLowerCase().includes(q) && (!kat||l.kategori===kat));
-  const aksiTd = canEdit() ? (l)=>`<td><button onclick="hapusLog('${l.id}')" class="text-red-600 text-xs font-semibold hover:underline">Hapus</button></td>` : ()=>'';
+  const aksiTd = canEdit() ? (l)=>`<td><button onclick="hapusLog('${l.id}')" class="text-red-600 text-xs font-semibold hover:underline transition">Hapus</button></td>` : ()=>'';
   document.getElementById('riwayatTableBody').innerHTML = list.map(l=>`
-    <tr>
+    <tr class="hover:bg-blue-50 transition-colors">
       <td>${l.tanggal}</td><td>${l.namaSiswa}</td><td>${l.kelas}</td>
       <td><span class="badge ${l.kategori==='Berat'?'bg-red-600 text-white':l.kategori==='Sedang'?'bg-amber-400 text-slate-900':'bg-green-500 text-white'}">${l.kategori}</span></td>
       <td>${l.jenis}</td><td class="font-bold text-red-600">-${l.poin}</td>
@@ -857,10 +951,10 @@ async function hapusLog(id){
   if(!requireEdit()) return;
   const log = DB.log.find(l=>l.id===id);
   if(!log) return;
-  if(!confirm('Hapus catatan ini? Poin siswa akan dikembalikan.')) return;
+  if(!(await confirmModal('Hapus catatan ini? Poin siswa akan dikembalikan.'))) return;
   // Hapus log + kembalikan poin siswa dalam satu transaksi atomik.
   const { data, error } = await db.rpc('hapus_log_pelanggaran', { p_log_id: id });
-  if(error){ alert('Gagal menghapus: '+error.message); return; }
+  if(error){ toast('Gagal menghapus: '+error.message, 'error'); return; }
   const result = data[0];
   const siswa = DB.siswa.find(s=>s.id===result.siswa_id);
   if(siswa) siswa.poin = result.poin_baru;
@@ -889,7 +983,7 @@ function exportExcel(){
 // ================= MASTER TABLE =================
 function renderMaster(){
   document.getElementById('masterTableBody').innerHTML = MASTER.map(m=>`
-    <tr><td>${m.kode}</td><td>${m.kategori}</td><td>${m.jenis}</td><td class="font-bold">${m.poin}</td></tr>
+    <tr class="hover:bg-blue-50 transition-colors"><td>${m.kode}</td><td>${m.kategori}</td><td>${m.jenis}</td><td class="font-bold">${m.poin}</td></tr>
   `).join('');
 }
 
@@ -913,7 +1007,7 @@ function suggestSurat(){
 }
 function buatSurat(){
   const siswa = DB.siswa.find(s=>s.id===document.getElementById('suSiswa').value);
-  if(!siswa){ alert('Pilih siswa terlebih dahulu'); return; }
+  if(!siswa){ toast('Pilih siswa terlebih dahulu', 'warning'); return; }
   const jenis = document.getElementById('suJenis').value;
   const nomor = document.getElementById('suNomor').value.trim() || '..................................';
   const tanggal = new Date(document.getElementById('suTanggal').value).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
@@ -987,17 +1081,18 @@ function renderRekapKelas(){
       <div class="border rounded-lg p-3"><div class="text-xl font-bold">${logKelas.length}</div><div class="text-xs text-slate-500">Total Pelanggaran</div></div>
     </div>
     <div class="mb-4 text-sm">${Object.entries(perStatus).map(([k,v])=>`<span class="badge ${tindakLanjut(k==='Aman'?100:k==='Peringatan'?70:k==='Waspada'?45:k==='Kritis'?20:0).warna} mr-2 mb-1">${k}: ${v}</span>`).join('')}</div>
-    <table><thead><tr><th>Nama</th><th>NISN</th><th>Sisa Poin</th><th>Status</th></tr></thead>
-    <tbody>${urut.map(s=>{const tl=tindakLanjut(s.poin);return `<tr><td>${s.nama}</td><td>${s.nisn}</td><td class="font-bold">${s.poin}</td><td><span class="badge ${tl.warna}">${tl.label}</span></td></tr>`}).join('') || '<tr><td colspan="4" class="text-center text-slate-400 py-4">Belum ada siswa di kelas ini</td></tr>'}</tbody></table>`;
+    <table><thead><tr><th class="text-xs uppercase tracking-wide">Nama</th><th class="text-xs uppercase tracking-wide">NISN</th><th class="text-xs uppercase tracking-wide">Sisa Poin</th><th class="text-xs uppercase tracking-wide">Status</th></tr></thead>
+    <tbody>${urut.map(s=>{const tl=tindakLanjut(s.poin);return `<tr class="hover:bg-blue-50 transition-colors"><td>${s.nama}</td><td>${s.nisn}</td><td class="font-bold">${s.poin}</td><td><span class="badge ${tl.warna}">${tl.label}</span></td></tr>`}).join('') || '<tr><td colspan="4" class="text-center text-slate-400 py-4">Belum ada siswa di kelas ini</td></tr>'}</tbody></table>`;
 }
 
 // ================= STATISTIK =================
 function renderStatistik(){
   const log = DB.log.filter(l=>l.semester===DB.semester);
   document.getElementById('statistikRingkas').innerHTML = `
-    <div class="bg-white rounded-xl shadow p-4 text-center"><div class="text-2xl font-bold">${log.length}</div><div class="text-xs text-slate-500">Total Pelanggaran (Semester Ini)</div></div>
-    <div class="bg-white rounded-xl shadow p-4 text-center"><div class="text-2xl font-bold">${new Set(log.map(l=>l.siswaId)).size}</div><div class="text-xs text-slate-500">Siswa Terlibat</div></div>
-    <div class="bg-white rounded-xl shadow p-4 text-center"><div class="text-2xl font-bold">${log.reduce((a,l)=>a+l.poin,0)}</div><div class="text-xs text-slate-500">Total Poin Terpotong</div></div>`;
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 text-center hover:shadow-md hover:-translate-y-0.5 transition"><div class="text-2xl font-bold count-num" data-target="${log.length}">0</div><div class="text-xs text-slate-500">Total Pelanggaran (Semester Ini)</div></div>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 text-center hover:shadow-md hover:-translate-y-0.5 transition"><div class="text-2xl font-bold count-num" data-target="${new Set(log.map(l=>l.siswaId)).size}">0</div><div class="text-xs text-slate-500">Siswa Terlibat</div></div>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 text-center hover:shadow-md hover:-translate-y-0.5 transition"><div class="text-2xl font-bold count-num" data-target="${log.reduce((a,l)=>a+l.poin,0)}">0</div><div class="text-xs text-slate-500">Total Poin Terpotong</div></div>`;
+  animateCounts('#statistikRingkas');
 
   const hitung = {};
   log.forEach(l=>{ hitung[l.jenis]=(hitung[l.jenis]||0)+1; });
@@ -1006,7 +1101,7 @@ function renderStatistik(){
   document.getElementById('statistikTerbanyak').innerHTML = top.map(([jenis,jml])=>`
     <div>
       <div class="flex justify-between text-xs mb-1"><span>${jenis}</span><span class="font-semibold">${jml}x</span></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${(jml/maxTop*100).toFixed(0)}%"></div></div>
+      <div class="bar-track"><div class="bar-fill" data-width="${(jml/maxTop*100).toFixed(0)}"></div></div>
     </div>`).join('') || '<p class="text-sm text-slate-400">Belum ada data pelanggaran semester ini.</p>';
 
   const kat = {Ringan:0,Sedang:0,Berat:0};
@@ -1015,20 +1110,25 @@ function renderStatistik(){
   document.getElementById('statistikKategori').innerHTML = Object.entries(kat).map(([k,v])=>`
     <div>
       <div class="flex justify-between text-xs mb-1"><span>${k}</span><span class="font-semibold">${v}x</span></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${(v/maxKat*100).toFixed(0)}%;background:${k==='Berat'?'#dc2626':k==='Sedang'?'#f59e0b':'#16a34a'}">${v}</div></div>
+      <div class="bar-track"><div class="bar-fill" data-width="${(v/maxKat*100).toFixed(0)}" style="background:${k==='Berat'?'#dc2626':k==='Sedang'?'#f59e0b':'#16a34a'}">${v}</div></div>
     </div>`).join('');
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('#statistikTerbanyak .bar-fill, #statistikKategori .bar-fill').forEach(el=>{
+      el.style.width = el.dataset.width + '%';
+    });
+  });
 }
 
 // ================= KELOLA AKUN (khusus Admin) =================
 async function renderAkun(){
   if(!requireAdmin()) { switchTab('dashboard'); return; }
   const { data, error } = await db.from('profiles').select('id, nama, role').order('nama');
-  if(error){ alert('Gagal memuat daftar akun: '+error.message); return; }
+  if(error){ toast('Gagal memuat daftar akun: '+error.message, 'error'); return; }
   document.getElementById('akunTableBody').innerHTML = data.map(p=>`
-    <tr>
+    <tr class="hover:bg-blue-50 transition-colors">
       <td>${p.nama}</td><td>${p.role}</td>
       <td class="font-mono text-xs">${p.id}</td>
-      <td><button onclick="hapusProfil('${p.id}','${p.nama.replace(/'/g,"")}')" class="text-red-600 text-xs font-semibold hover:underline">Hapus</button></td>
+      <td><button onclick="hapusProfil('${p.id}','${p.nama.replace(/'/g,"")}')" class="text-red-600 text-xs font-semibold hover:underline transition">Hapus</button></td>
     </tr>`).join('') || '<tr><td colspan="4" class="text-center text-slate-400 py-6">Belum ada akun terdaftar</td></tr>';
 }
 async function simpanProfil(){
@@ -1037,20 +1137,20 @@ async function simpanProfil(){
   const nama = document.getElementById('akNama').value.trim();
   const role = document.getElementById('akRole').value;
   const uidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if(!uidPattern.test(uid)){ alert('User UID tidak valid. Salin persis dari Supabase Authentication → Users (format UUID).'); return; }
-  if(!nama){ alert('Nama wajib diisi'); return; }
+  if(!uidPattern.test(uid)){ toast('User UID tidak valid. Salin persis dari Supabase Authentication → Users (format UUID).', 'warning'); return; }
+  if(!nama){ toast('Nama wajib diisi', 'warning'); return; }
   const { error } = await db.from('profiles').upsert({ id: uid, nama, role });
-  if(error){ alert('Gagal menyimpan akun: '+error.message); return; }
+  if(error){ toast('Gagal menyimpan akun: '+error.message, 'error'); return; }
   document.getElementById('akUid').value=''; document.getElementById('akNama').value='';
-  alert('Akun berhasil disimpan.');
+  toast('Akun berhasil disimpan.', 'success');
   renderAkun();
 }
 async function hapusProfil(uid, nama){
   if(!requireAdmin()) return;
-  if(uid === DB.user.id){ alert('Anda tidak bisa menghapus profil akun Anda sendiri yang sedang login.'); return; }
-  if(!confirm(`Hapus akun "${nama}" dari daftar pengguna? Login Auth-nya sendiri (di Supabase Authentication) tidak ikut terhapus — hanya kehilangan akses ke aplikasi ini.`)) return;
+  if(uid === DB.user.id){ toast('Anda tidak bisa menghapus profil akun Anda sendiri yang sedang login.', 'warning'); return; }
+  if(!(await confirmModal(`Hapus akun "${nama}" dari daftar pengguna? Login Auth-nya sendiri (di Supabase Authentication) tidak ikut terhapus — hanya kehilangan akses ke aplikasi ini.`))) return;
   const { error } = await db.from('profiles').delete().eq('id', uid);
-  if(error){ alert('Gagal menghapus: '+error.message); return; }
+  if(error){ toast('Gagal menghapus: '+error.message, 'error'); return; }
   renderAkun();
 }
 
@@ -1063,27 +1163,27 @@ async function simpanSekolah(){
     kepsek: document.getElementById('setKepsek').value.trim()
   };
   const { error } = await db.from('sekolah_settings').upsert({ id:1, ...sekolah, semester: DB.semester });
-  if(error){ alert('Gagal menyimpan: '+error.message); return; }
+  if(error){ toast('Gagal menyimpan: '+error.message, 'error'); return; }
   DB.sekolah = sekolah;
-  alert('Info sekolah disimpan.');
+  toast('Info sekolah disimpan.', 'success');
 }
 async function simpanSemester(){
   if(!requireEdit()) return;
   const val = document.getElementById('setSemester').value.trim();
   if(!val) return;
   const { error } = await db.from('sekolah_settings').upsert({ id:1, ...DB.sekolah, semester: val });
-  if(error){ alert('Gagal menyimpan: '+error.message); return; }
+  if(error){ toast('Gagal menyimpan: '+error.message, 'error'); return; }
   DB.semester = val; updateUserBadge();
-  alert('Nama semester disimpan.');
+  toast('Nama semester disimpan.', 'success');
 }
 async function resetSemester(){
   if(!requireEdit()) return;
-  if(!confirm('Yakin reset poin SEMUA siswa menjadi 100? Riwayat lama tetap tersimpan.')) return;
+  if(!(await confirmModal('Yakin reset poin SEMUA siswa menjadi 100? Riwayat lama tetap tersimpan.'))) return;
   const { error } = await db.from('siswa').update({poin:100}).not('id','is',null);
-  if(error){ alert('Gagal mereset: '+error.message); return; }
+  if(error){ toast('Gagal mereset: '+error.message, 'error'); return; }
   DB.siswa.forEach(s=> s.poin = 100 );
   renderDashboard(); renderSiswaTable();
-  alert('Poin semua siswa telah direset ke 100 untuk semester baru.');
+  toast('Poin semua siswa telah direset ke 100 untuk semester baru.', 'success');
 }
 function exportBackup(){
   downloadFile('backup-poin-kesiswaan-'+new Date().toISOString().slice(0,10)+'.json', JSON.stringify(DB,null,2), 'application/json');
@@ -1096,16 +1196,16 @@ async function importBackup(e){
   reader.onload = async ev=>{
     try{
       const data = JSON.parse(ev.target.result);
-      if(!confirm('Import akan MENAMBAHKAN data siswa & riwayat dari backup lama ke Supabase (bukan menimpa). Lanjutkan?')) return;
+      if(!(await confirmModal('Import akan MENAMBAHKAN data siswa & riwayat dari backup lama ke Supabase (bukan menimpa). Lanjutkan?'))) return;
       if(Array.isArray(data.siswa) && data.siswa.length){
         const rows = data.siswa.map(s=>({nama:s.nama, nisn:s.nisn||'', kelas:s.kelas, poin:s.poin}));
         const { data: inserted, error } = await db.from('siswa').insert(rows).select();
-        if(error){ alert('Gagal impor siswa: '+error.message); return; }
+        if(error){ toast('Gagal impor siswa: '+error.message, 'error'); return; }
         inserted.forEach(d=> DB.siswa.push({id:d.id, nama:d.nama, nisn:d.nisn||'', kelas:d.kelas, poin:d.poin}));
       }
-      alert('Data lama berhasil diimpor ke Supabase. Riwayat pelanggaran lama tidak otomatis ditautkan ke siswa baru — hubungi Admin jika perlu migrasi riwayat lengkap.');
+      toast('Data lama berhasil diimpor ke Supabase. Riwayat pelanggaran lama tidak otomatis ditautkan ke siswa baru — hubungi Admin jika perlu migrasi riwayat lengkap.', 'success');
       renderDashboard(); renderSiswaTable();
-    }catch(err){ alert('File tidak valid.'); }
+    }catch(err){ toast('File tidak valid.', 'error'); }
   };
   reader.readAsText(file);
 }
