@@ -4,82 +4,76 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistem Poin Kedisiplinan Siswa</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root{
-    --navy-900:#0b2036;
-    --navy-800:#123354;
-    --navy-700:#1a4269;
-    --gold-500:#c8973f;
-    --gold-600:#af7f2c;
-    --canvas:#f2f4f8;
-    --ink:#16233a;
-    --ink-soft:#5b6b83;
-    --line:#e4e8f0;
-  }
-  body { font-family: 'Inter', system-ui, sans-serif; background:var(--canvas); color:var(--ink); }
-  h1,h2,h3,.font-display { font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif; letter-spacing:-0.01em; }
-  h2.font-bold, h2 { font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif; }
-
-  .card{
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:16px;
-    box-shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 24px -14px rgba(11,32,54,.18);
-  }
-
-  .tab-active { background:var(--navy-800); color:#fff; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; }
+  .tab-active { background:#1e3a5f; color:#fff; }
   .tab-inactive { background:#eef2f6; color:#334155; }
   table { border-collapse: collapse; width:100%; }
-  th, td { border:1px solid var(--line); padding:9px 12px; font-size:13.5px; }
-  th { background:var(--navy-800); color:#fff; text-align:left; position:sticky; top:0;
-       font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; font-size:11.5px;
-       letter-spacing:.04em; text-transform:uppercase; }
-  tbody tr:nth-child(even) { background:#f8fafc; }
-  tbody tr:hover { background:#eef4fb; }
-  .badge { padding:3px 12px; border-radius:9999px; font-size:12px; font-weight:600; display:inline-block;
-           box-shadow:inset 0 0 0 1px rgba(0,0,0,.05); }
+  th, td { border:1px solid #e2e8f0; padding:8px 10px; font-size:14px; }
+  th { background:#1e3a5f; color:#fff; text-align:left; position:sticky; top:0; }
+  tr:nth-child(even) { background:#f8fafc; }
+  .badge { padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:600; display:inline-block; }
   ::-webkit-scrollbar{width:8px;height:8px;} ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
-  .bar-track{background:#e7eaf1;border-radius:6px;overflow:hidden;height:18px;}
-  .bar-fill{background:linear-gradient(90deg,var(--navy-800),var(--navy-700));height:100%;color:#fff;font-size:11px;display:flex;align-items:center;padding-left:6px;white-space:nowrap;}
+  .bar-track{background:#e2e8f0;border-radius:6px;overflow:hidden;height:18px;}
+  .bar-fill{background:#1e3a5f;height:100%;color:#fff;font-size:11px;display:flex;align-items:center;padding-left:6px;white-space:nowrap;}
   #printArea{max-height:0;overflow:hidden;}
   @media print{
     body *{visibility:hidden;}
     #printArea, #printArea *{visibility:visible;}
     #printArea{position:absolute;top:0;left:0;width:100%;padding:20px;max-height:none;overflow:visible;}
   }
-  .stat-card{ background:#fff; border:1px solid var(--line); border-top:3px solid var(--stat-accent,var(--navy-800));
-              border-radius:14px; box-shadow:0 1px 2px rgba(16,24,40,.04); }
-  .sidebar-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:500;color:#3c4a5e;
-                border-left:3px solid transparent; transition:background .15s ease,border-color .15s ease;}
-  .sidebar-link:hover{background:#eef2f6;}
-  .sidebar-link.active{background:var(--navy-800);color:#fff;border-left-color:var(--gold-500);}
-  input:not([type=file]):not([type=checkbox]), select, textarea {
-    border-color:#dbe1ea; transition:border-color .15s ease, box-shadow .15s ease;
-  }
-  input:not([type=file]):not([type=checkbox]):focus, select:focus, textarea:focus {
-    outline:none; border-color:var(--navy-700); box-shadow:0 0 0 3px rgba(18,51,84,.12);
-  }
-  button{ transition:background-color .15s ease, border-color .15s ease, transform .05s ease, box-shadow .15s ease; }
-  #sidebar{width:222px;flex-shrink:0;}
+  .sidebar-link{position:relative;display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;font-size:14px;font-weight:500;color:#475569;transition:background .15s ease,color .15s ease,transform .1s ease;}
+  .sidebar-link:hover{background:#eef2f6;color:#1e3a5f;}
+  .sidebar-link:active{transform:scale(.98);}
+  .sidebar-link .ic{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:#f1f5f9;font-size:15px;flex-shrink:0;transition:background .15s ease,transform .15s ease;}
+  .sidebar-link.active{background:linear-gradient(135deg,#1e3a5f,#2b527f);color:#fff;box-shadow:0 4px 12px rgba(30,58,95,.25);}
+  .sidebar-link.active .ic{background:rgba(255,255,255,.18);}
+  .sidebar-link:hover .ic{transform:scale(1.06);}
+  #sidebar{width:230px;flex-shrink:0;}
+  #sidebarHandle,#sidebarSheetHeader,#sidebarFab{display:none;}
+
+  /* ===== MOBILE: sidebar jadi bottom sheet + FAB toggle ===== */
   @media (max-width:900px){
-    #sidebar{position:fixed;top:0;left:-260px;height:100%;z-index:50;transition:left .2s ease;box-shadow:2px 0 10px rgba(0,0,0,.15);}
-    #sidebar.open{left:0;}
-    #sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40;}
-    #sidebarOverlay.open{display:block;}
+    #sidebar{
+      position:fixed;left:0;right:0;bottom:0;top:auto;
+      width:100%;height:auto;max-height:78vh;
+      border-radius:22px 22px 0 0;
+      transform:translateY(110%);
+      transition:transform .28s cubic-bezier(.32,.72,0,1);
+      z-index:50;box-shadow:0 -8px 30px rgba(15,23,42,.25);
+      padding:0 14px 18px;
+    }
+    #sidebar.open{transform:translateY(0);}
+    #sidebarHandle{display:block;width:42px;height:5px;border-radius:99px;background:#e2e8f0;margin:10px auto 4px;}
+    #sidebarSheetHeader{display:flex;align-items:center;justify-content:space-between;padding:6px 6px 12px;margin-bottom:4px;border-bottom:1px solid #f1f5f9;}
+    #sidebarSheetHeader span{font-weight:700;font-size:14px;color:#1e3a5f;}
+    #sidebarSheetHeader button{width:28px;height:28px;border-radius:8px;background:#f1f5f9;color:#64748b;font-size:14px;display:flex;align-items:center;justify-content:center;}
+    #sidebar .sidebar-nav{max-height:calc(78vh - 70px);overflow-y:auto;}
+    #sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:40;opacity:0;transition:opacity .25s ease;}
+    #sidebarOverlay.open{display:block;opacity:1;}
+
+    #sidebarFab{
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+      z-index:45;height:52px;padding:0 22px;border-radius:999px;
+      background:linear-gradient(135deg,#1e3a5f,#2b6cb0);color:#fff;
+      box-shadow:0 10px 24px rgba(30,58,95,.4);font-weight:600;font-size:13px;
+      transition:transform .15s ease,box-shadow .15s ease;
+    }
+    #sidebarFab:active{transform:translateX(-50%) scale(.95);}
+    #sidebarFab .fabIcon{font-size:16px;line-height:1;transition:transform .25s ease;}
+    #sidebarFab.open .fabIcon{transform:rotate(90deg);}
+    main{padding-bottom:92px;}
   }
 </style>
 </head>
-<body class="min-h-screen">
-
+<body class="bg-slate-100 min-h-screen">
 
 <!-- ===== MODAL LOGIN ===== -->
-<div id="modalLogin" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4" style="background:linear-gradient(135deg,#0b2036 0%,#123354 55%,#1a4269 100%);">
+<div id="modalLogin" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4" style="background:linear-gradient(135deg,#0f2540 0%,#1e3a5f 55%,#254a75 100%);">
   <!-- dekorasi lingkaran lembut -->
   <div class="pointer-events-none absolute -top-24 -left-24 w-72 h-72 rounded-full bg-white/5"></div>
   <div class="pointer-events-none absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-white/5"></div>
@@ -87,11 +81,11 @@
   <div class="relative bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
     <!-- header berlogo -->
     <div class="px-7 pt-8 pb-6 text-center border-b border-slate-100">
-      <div class="mx-auto w-14 h-14 rounded-2xl bg-[#123354] flex items-center justify-center text-2xl mb-3 shadow-lg shadow-[#123354]/30 ring-2 ring-[#c8973f]/40">
+      <div class="mx-auto w-14 h-14 rounded-2xl bg-[#1e3a5f] flex items-center justify-center text-2xl mb-3 shadow-lg shadow-[#1e3a5f]/30">
         🎓
       </div>
       <h2 class="text-lg font-bold text-slate-800">Sistem Poin Kedisiplinan Siswa</h2>
-      <p class="text-xs text-slate-500 mt-1">SMK Muhammadiyah 2 Samarinda</p>
+      <p class="text-xs text-slate-500 mt-1">Kesiswaan, BK &amp; Kepala Sekolah</p>
     </div>
 
     <!-- form -->
@@ -101,7 +95,7 @@
         <div class="relative mt-1.5">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">✉️</span>
           <input id="loginEmail" type="email" autocomplete="username"
-            class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#123354]/30 focus:border-[#123354] transition"
+            class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition"
             placeholder="nama@sekolah.sch.id">
         </div>
       </div>
@@ -111,7 +105,7 @@
         <div class="relative mt-1.5">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔒</span>
           <input id="loginPassword" type="password" autocomplete="current-password"
-            class="w-full border border-slate-200 rounded-lg pl-9 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#123354]/30 focus:border-[#123354] transition"
+            class="w-full border border-slate-200 rounded-lg pl-9 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30 focus:border-[#1e3a5f] transition"
             placeholder="Password" onkeydown="if(event.key==='Enter') loginUser()">
           <button type="button" onclick="togglePasswordVisibility()" id="togglePwBtn"
             class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-sm select-none">
@@ -123,7 +117,7 @@
       <p id="loginError" class="text-xs text-red-600 font-medium mb-3 hidden flex items-center gap-1"></p>
 
       <button onclick="loginUser()" id="loginBtn"
-        class="w-full bg-[#123354] text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-[#0b2036] active:scale-[0.99] transition shadow-md shadow-[#123354]/20 flex items-center justify-center gap-2">
+        class="w-full bg-[#1e3a5f] text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-[#16304d] active:scale-[0.99] transition shadow-md shadow-[#1e3a5f]/20 flex items-center justify-center gap-2">
         <span id="loginBtnText">Masuk</span>
       </button>
 
@@ -136,43 +130,52 @@
 
 <div id="loadingOverlay" class="fixed inset-0 bg-white flex items-center justify-center z-50">
   <div class="text-center">
-    <div class="w-10 h-10 border-4 border-slate-200 border-t-[#123354] rounded-full animate-spin mx-auto mb-3"></div>
+    <div class="w-10 h-10 border-4 border-slate-200 border-t-[#1e3a5f] rounded-full animate-spin mx-auto mb-3"></div>
     <p class="text-slate-500 text-sm">Memuat sistem…</p>
   </div>
 </div>
 
 <!-- ===== HEADER ===== -->
-<header class="bg-[#123354] text-white px-4 md:px-6 py-3 flex flex-wrap justify-between items-center gap-2 sticky top-0 z-40 shadow-lg" style="border-bottom:3px solid #c8973f;">
+<header class="bg-[#1e3a5f] text-white px-4 md:px-6 py-3 flex flex-wrap justify-between items-center gap-2 sticky top-0 z-40 shadow">
   <div class="flex items-center gap-3">
-    <button onclick="toggleSidebar()" class="md:hidden text-white text-2xl leading-none">☰</button>
-    <div class="w-9 h-9 rounded-lg bg-white/10 hidden sm:flex items-center justify-center text-lg">🎓</div>
     <div>
       <h1 class="font-bold text-lg leading-tight">Sistem Poin Kedisiplinan Siswa</h1>
       <p class="text-xs text-slate-300" id="semesterLabel">Semester: -</p>
     </div>
   </div>
   <div class="flex items-center gap-3 text-sm">
-    <span id="userBadge" class="bg-white/10 px-3 py-1.5 rounded-full border border-white/10"></span>
-    <button onclick="logoutUser()" class="text-xs text-slate-300 hover:text-white border border-white/20 hover:border-white/40 rounded-full px-3 py-1.5 transition">Logout</button>
+    <span id="userBadge" class="bg-white/10 px-3 py-1 rounded-full"></span>
+    <button onclick="logoutUser()" class="underline text-xs text-slate-300 hover:text-white">Logout</button>
   </div>
 </header>
 
 <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
+<button id="sidebarFab" class="md:hidden" onclick="toggleSidebar()">
+  <span class="fabIcon">☰</span><span id="sidebarFabLabel">Menu</span>
+</button>
+
 <div class="flex items-start max-w-7xl mx-auto">
   <!-- ===== SIDEBAR ===== -->
-  <aside id="sidebar" class="bg-white shadow-sm md:sticky md:top-[64px] md:h-[calc(100vh-64px)] overflow-y-auto py-4 px-2 space-y-1">
-    <button class="tabBtn sidebar-link active w-full text-left" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
-    <button class="tabBtn sidebar-link w-full text-left" data-tab="siswa" onclick="switchTab('siswa')">👤 Data Siswa</button>
-    <button class="tabBtn sidebar-link w-full text-left edit-only" data-tab="catat" onclick="switchTab('catat')">✏️ Catat Pelanggaran</button>
-    <button class="tabBtn sidebar-link w-full text-left" data-tab="riwayat" onclick="switchTab('riwayat')">🕒 Riwayat</button>
-    <button class="tabBtn sidebar-link w-full text-left" data-tab="master" onclick="switchTab('master')">📋 Master Poin</button>
-    <button class="tabBtn sidebar-link w-full text-left" data-tab="surat" onclick="switchTab('surat')">📄 Cetak Surat</button>
-    <button class="tabBtn sidebar-link w-full text-left" data-tab="rekapkelas" onclick="switchTab('rekapkelas')">🏫 Rekap Kelas</button>
-    <button class="tabBtn sidebar-link w-full text-left" data-tab="statistik" onclick="switchTab('statistik')">📈 Statistik</button>
-    <hr class="my-2 border-slate-200">
-    <button class="tabBtn sidebar-link w-full text-left admin-only" data-tab="akun" onclick="switchTab('akun')">🔑 Kelola Akun</button>
-    <button class="tabBtn sidebar-link w-full text-left edit-only" data-tab="pengaturan" onclick="switchTab('pengaturan')">⚙️ Pengaturan</button>
+  <aside id="sidebar" class="bg-white shadow-sm md:sticky md:top-[64px] md:h-[calc(100vh-64px)] overflow-y-auto py-4 px-2">
+    <div id="sidebarHandle" onclick="toggleSidebar()"></div>
+    <div id="sidebarSheetHeader">
+      <span>📌 Menu Navigasi</span>
+      <button onclick="toggleSidebar()">✕</button>
+    </div>
+    <div class="sidebar-nav space-y-1">
+      <button class="tabBtn sidebar-link active w-full text-left" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="ic">📊</span><span>Dashboard</span></button>
+      <button class="tabBtn sidebar-link w-full text-left" data-tab="siswa" onclick="switchTab('siswa')"><span class="ic">👤</span><span>Data Siswa</span></button>
+      <button class="tabBtn sidebar-link w-full text-left edit-only" data-tab="catat" onclick="switchTab('catat')"><span class="ic">✏️</span><span>Catat Pelanggaran</span></button>
+      <button class="tabBtn sidebar-link w-full text-left" data-tab="riwayat" onclick="switchTab('riwayat')"><span class="ic">🕒</span><span>Riwayat</span></button>
+      <button class="tabBtn sidebar-link w-full text-left" data-tab="master" onclick="switchTab('master')"><span class="ic">📋</span><span>Master Poin</span></button>
+      <button class="tabBtn sidebar-link w-full text-left" data-tab="surat" onclick="switchTab('surat')"><span class="ic">📄</span><span>Cetak Surat</span></button>
+      <button class="tabBtn sidebar-link w-full text-left" data-tab="rekapkelas" onclick="switchTab('rekapkelas')"><span class="ic">🏫</span><span>Rekap Kelas</span></button>
+      <button class="tabBtn sidebar-link w-full text-left" data-tab="statistik" onclick="switchTab('statistik')"><span class="ic">📈</span><span>Statistik</span></button>
+      <hr class="my-2 border-slate-200">
+      <button class="tabBtn sidebar-link w-full text-left admin-only" data-tab="akun" onclick="switchTab('akun')"><span class="ic">🔑</span><span>Kelola Akun</span></button>
+      <button class="tabBtn sidebar-link w-full text-left edit-only" data-tab="pengaturan" onclick="switchTab('pengaturan')"><span class="ic">⚙️</span><span>Pengaturan</span></button>
+    </div>
   </aside>
 
   <main class="flex-1 p-4 md:p-6 min-w-0">
@@ -180,7 +183,7 @@
   <!-- ===== DASHBOARD ===== -->
   <section id="tab-dashboard">
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5" id="statCards"></div>
-    <div class="card p-4">
+    <div class="bg-white rounded-xl shadow p-4">
       <div class="flex flex-wrap gap-3 items-center mb-3">
         <input id="dashSearch" oninput="renderDashboard()" placeholder="Cari nama / NISN..." class="border rounded-lg px-3 py-2 text-sm flex-1 min-w-[180px]">
         <select id="dashKelas" onchange="renderDashboard()" class="border rounded-lg px-3 py-2 text-sm"></select>
@@ -200,19 +203,19 @@
 
   <!-- ===== DATA SISWA ===== -->
   <section id="tab-siswa" class="hidden">
-    <div class="card p-4 mb-4 edit-only">
+    <div class="bg-white rounded-xl shadow p-4 mb-4 edit-only">
       <h2 class="font-bold text-slate-800 mb-3">Tambah Siswa</h2>
       <div class="grid md:grid-cols-4 gap-3">
         <input id="sNama" placeholder="Nama lengkap" class="border rounded-lg px-3 py-2 text-sm">
         <input id="sNisn" placeholder="NISN / NIS" class="border rounded-lg px-3 py-2 text-sm">
         <input id="sKelas" placeholder="Kelas (mis. XII TJKT 1)" class="border rounded-lg px-3 py-2 text-sm">
-        <button onclick="tambahSiswa()" class="bg-[#123354] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#0b2036]">+ Tambah Siswa</button>
+        <button onclick="tambahSiswa()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d]">+ Tambah Siswa</button>
       </div>
       <p class="text-xs text-slate-500 mt-2">Bisa juga tempel banyak baris sekaligus (format: Nama, NISN, Kelas per baris) →</p>
       <textarea id="sBulk" rows="3" placeholder="Contoh:&#10;Budi Santoso, 0051234567, XII TJKT 1&#10;Siti Aminah, 0051234568, XII TJKT 1" class="w-full border rounded-lg px-3 py-2 text-sm mt-1"></textarea>
       <button onclick="tambahSiswaBulk()" class="mt-2 bg-slate-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-700">Import Banyak Siswa</button>
     </div>
-    <div class="card p-4">
+    <div class="bg-white rounded-xl shadow p-4">
       <div class="flex flex-wrap gap-3 items-center mb-3">
         <h2 class="font-bold text-slate-800">Daftar Siswa</h2>
         <input id="siswaSearch" oninput="renderSiswaTable()" placeholder="Cari..." class="border rounded-lg px-3 py-2 text-sm ml-auto">
@@ -226,7 +229,7 @@
 
   <!-- ===== CATAT PELANGGARAN ===== -->
   <section id="tab-catat" class="hidden">
-    <div class="card p-4 max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl shadow p-4 max-w-2xl mx-auto">
       <h2 class="font-bold text-slate-800 mb-3">Catat Pelanggaran Baru</h2>
       <label class="text-sm font-medium text-slate-600">Siswa</label>
       <select id="cSiswa" class="w-full border rounded-lg px-3 py-2 mt-1 mb-3"></select>
@@ -248,7 +251,7 @@
 
   <!-- ===== RIWAYAT ===== -->
   <section id="tab-riwayat" class="hidden">
-    <div class="card p-4">
+    <div class="bg-white rounded-xl shadow p-4">
       <div class="flex flex-wrap gap-3 items-center mb-3">
         <h2 class="font-bold text-slate-800">Riwayat Pelanggaran</h2>
         <input id="rSearch" oninput="renderRiwayat()" placeholder="Cari nama siswa..." class="border rounded-lg px-3 py-2 text-sm">
@@ -270,14 +273,14 @@
 
   <!-- ===== MASTER POIN ===== -->
   <section id="tab-master" class="hidden">
-    <div class="card p-4 mb-4">
+    <div class="bg-white rounded-xl shadow p-4 mb-4">
       <h2 class="font-bold text-slate-800 mb-3">Master Jenis Pelanggaran & Poin</h2>
       <div class="overflow-x-auto max-h-[60vh]">
         <table><thead><tr><th>No</th><th>Kategori</th><th>Jenis Pelanggaran</th><th>Poin</th></tr></thead>
         <tbody id="masterTableBody"></tbody></table>
       </div>
     </div>
-    <div class="card p-4">
+    <div class="bg-white rounded-xl shadow p-4">
       <h2 class="font-bold text-slate-800 mb-3">Ketentuan Tindak Lanjut Berdasarkan Sisa Poin</h2>
       <table><thead><tr><th>Sisa Poin</th><th>Tindak Lanjut Pembinaan</th></tr></thead>
         <tbody>
@@ -294,7 +297,7 @@
   <!-- ===== CETAK SURAT ===== -->
   <section id="tab-surat" class="hidden">
     <div class="grid md:grid-cols-2 gap-4">
-      <div class="card p-4">
+      <div class="bg-white rounded-xl shadow p-4">
         <h2 class="font-bold text-slate-800 mb-3">Buat Surat</h2>
         <label class="text-sm font-medium text-slate-600">Siswa</label>
         <select id="suSiswa" onchange="suggestSurat()" class="w-full border rounded-lg px-3 py-2 mt-1 mb-3"></select>
@@ -316,9 +319,9 @@
         <label class="text-sm font-medium text-slate-600">Tanggal Surat</label>
         <input id="suTanggal" type="date" class="w-full border rounded-lg px-3 py-2 mt-1 mb-4">
 
-        <button onclick="buatSurat()" class="w-full bg-[#123354] text-white py-2.5 rounded-lg font-semibold hover:bg-[#0b2036]">Tampilkan Surat</button>
+        <button onclick="buatSurat()" class="w-full bg-[#1e3a5f] text-white py-2.5 rounded-lg font-semibold hover:bg-[#16304d]">Tampilkan Surat</button>
       </div>
-      <div class="card p-4">
+      <div class="bg-white rounded-xl shadow p-4">
         <div class="flex justify-between items-center mb-3">
           <h2 class="font-bold text-slate-800">Pratinjau</h2>
           <button onclick="doPrint(document.getElementById('suratPreview').innerHTML)" class="bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-green-700">🖨️ Cetak</button>
@@ -330,7 +333,7 @@
 
   <!-- ===== REKAP KELAS ===== -->
   <section id="tab-rekapkelas" class="hidden">
-    <div class="card p-4">
+    <div class="bg-white rounded-xl shadow p-4">
       <div class="flex flex-wrap gap-3 items-center mb-4">
         <h2 class="font-bold text-slate-800">Rekap per Kelas</h2>
         <select id="rkKelas" onchange="renderRekapKelas()" class="border rounded-lg px-3 py-2 text-sm"></select>
@@ -343,11 +346,11 @@
   <!-- ===== STATISTIK ===== -->
   <section id="tab-statistik" class="hidden">
     <div class="grid md:grid-cols-3 gap-3 mb-4" id="statistikRingkas"></div>
-    <div class="card p-4 mb-4">
+    <div class="bg-white rounded-xl shadow p-4 mb-4">
       <h2 class="font-bold text-slate-800 mb-3">Pelanggaran Terbanyak</h2>
       <div id="statistikTerbanyak" class="space-y-2"></div>
     </div>
-    <div class="card p-4">
+    <div class="bg-white rounded-xl shadow p-4">
       <h2 class="font-bold text-slate-800 mb-3">Total per Kategori</h2>
       <div id="statistikKategori" class="space-y-2"></div>
     </div>
@@ -355,7 +358,7 @@
 
   <!-- ===== KELOLA AKUN (khusus Admin) ===== -->
   <section id="tab-akun" class="hidden">
-    <div class="card p-4 mb-4 max-w-2xl">
+    <div class="bg-white rounded-xl shadow p-4 mb-4 max-w-2xl">
       <h2 class="font-bold text-slate-800 mb-1">Tambah / Ubah Akun</h2>
       <p class="text-xs text-slate-500 mb-3">
         1) Buat login akunnya dulu di Supabase Dashboard → Authentication → Users → Add user (isi email &amp; password).
@@ -369,9 +372,9 @@
       <select id="akRole" class="w-full border rounded-lg px-3 py-2 mt-1 mb-4">
         <option>Kesiswaan</option><option>BK</option><option>Kepala Sekolah</option><option>Wali Kelas</option><option>Admin</option>
       </select>
-      <button onclick="simpanProfil()" class="bg-[#123354] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#0b2036]">Simpan Akun</button>
+      <button onclick="simpanProfil()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d]">Simpan Akun</button>
     </div>
-    <div class="card p-4">
+    <div class="bg-white rounded-xl shadow p-4">
       <h2 class="font-bold text-slate-800 mb-3">Daftar Akun Terdaftar</h2>
       <div class="overflow-x-auto max-h-[50vh]">
         <table><thead><tr><th>Nama</th><th>Peran</th><th>User UID</th><th>Aksi</th></tr></thead>
@@ -382,24 +385,24 @@
 
   <!-- ===== PENGATURAN ===== -->
   <section id="tab-pengaturan" class="hidden">
-    <div class="card p-4 mb-4 max-w-xl">
+    <div class="bg-white rounded-xl shadow p-4 mb-4 max-w-xl">
       <h2 class="font-bold text-slate-800 mb-3">Info Sekolah (untuk Kop Surat)</h2>
       <input id="setNamaSekolah" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Nama Sekolah">
       <input id="setAlamatSekolah" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Alamat Sekolah">
       <input id="setKepsek" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Nama Kepala Sekolah">
-      <button onclick="simpanSekolah()" class="bg-[#123354] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#0b2036]">Simpan Info Sekolah</button>
+      <button onclick="simpanSekolah()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d]">Simpan Info Sekolah</button>
     </div>
-    <div class="card p-4 mb-4 max-w-xl">
+    <div class="bg-white rounded-xl shadow p-4 mb-4 max-w-xl">
       <h2 class="font-bold text-slate-800 mb-3">Info Semester Aktif</h2>
       <input id="setSemester" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Contoh: Ganjil 2026/2027">
-      <button onclick="simpanSemester()" class="bg-[#123354] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#0b2036]">Simpan Nama Semester</button>
+      <button onclick="simpanSemester()" class="bg-[#1e3a5f] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#16304d]">Simpan Nama Semester</button>
     </div>
-    <div class="card p-4 mb-4 max-w-xl border border-amber-300">
+    <div class="bg-white rounded-xl shadow p-4 mb-4 max-w-xl border border-amber-300">
       <h2 class="font-bold text-amber-700 mb-2">Reset Poin Semester Baru</h2>
       <p class="text-sm text-slate-600 mb-3">Mengembalikan poin SEMUA siswa menjadi 100. Riwayat pelanggaran lama tetap tersimpan dan tetap bisa dilihat di tab Riwayat (ditandai semester lama).</p>
       <button onclick="resetSemester()" class="bg-amber-500 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-amber-600">Reset Poin ke 100 (Semester Baru)</button>
     </div>
-    <div class="card p-4 max-w-xl">
+    <div class="bg-white rounded-xl shadow p-4 max-w-xl">
       <h2 class="font-bold text-slate-800 mb-3">Migrasi Data Lama (opsional)</h2>
       <p class="text-sm text-slate-600 mb-3">Kalau sebelumnya sudah punya file backup JSON dari versi lokal (localStorage), import di sini — datanya akan ditambahkan ke database Supabase.</p>
       <label class="bg-slate-200 text-slate-700 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-300 cursor-pointer inline-block">
@@ -589,13 +592,25 @@ async function fetchAllData(){
 
 // ================= SIDEBAR (MOBILE) =================
 function toggleSidebar(){
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebarOverlay').classList.toggle('open');
+  const isOpen = document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open', isOpen);
+  const fab = document.getElementById('sidebarFab');
+  if(fab){
+    fab.classList.toggle('open', isOpen);
+    fab.querySelector('.fabIcon').textContent = isOpen ? '✕' : '☰';
+    document.getElementById('sidebarFabLabel').textContent = isOpen ? 'Tutup' : 'Menu';
+  }
 }
 function closeSidebarMobile(){
   if(window.innerWidth<900){
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebarOverlay').classList.remove('open');
+    const fab = document.getElementById('sidebarFab');
+    if(fab){
+      fab.classList.remove('open');
+      fab.querySelector('.fabIcon').textContent = '☰';
+      document.getElementById('sidebarFabLabel').textContent = 'Menu';
+    }
   }
 }
 
@@ -624,14 +639,14 @@ function renderStatCards(){
   const buckets = {Aman:0, Peringatan:0, Waspada:0, Kritis:0, Dikembalikan:0};
   DB.siswa.forEach(s=> buckets[tindakLanjut(s.poin).label]++ );
   const cards = [
-    {label:'Total Siswa', val: total, color:'text-[#123354]', accent:'#123354'},
-    {label:'Aman', val: buckets.Aman, color:'text-green-600', accent:'#16a34a'},
-    {label:'Peringatan', val: buckets.Peringatan, color:'text-amber-500', accent:'#f59e0b'},
-    {label:'Waspada', val: buckets.Waspada, color:'text-orange-500', accent:'#f97316'},
-    {label:'Kritis/Dikembalikan', val: buckets.Kritis+buckets.Dikembalikan, color:'text-red-600', accent:'#dc2626'},
+    {label:'Total Siswa', val: total, color:'text-slate-800'},
+    {label:'Aman', val: buckets.Aman, color:'text-green-600'},
+    {label:'Peringatan', val: buckets.Peringatan, color:'text-amber-500'},
+    {label:'Waspada', val: buckets.Waspada, color:'text-orange-500'},
+    {label:'Kritis/Dikembalikan', val: buckets.Kritis+buckets.Dikembalikan, color:'text-red-600'},
   ];
   document.getElementById('statCards').innerHTML = cards.map(c=>`
-    <div class="stat-card p-3.5 text-center" style="--stat-accent:${c.accent}">
+    <div class="bg-white rounded-xl shadow p-3 text-center">
       <div class="text-2xl font-bold ${c.color}">${c.val}</div>
       <div class="text-xs text-slate-500 mt-1">${c.label}</div>
     </div>`).join('');
@@ -945,9 +960,9 @@ function renderRekapKelas(){
 function renderStatistik(){
   const log = DB.log.filter(l=>l.semester===DB.semester);
   document.getElementById('statistikRingkas').innerHTML = `
-    <div class="card p-4 text-center"><div class="text-2xl font-bold">${log.length}</div><div class="text-xs text-slate-500">Total Pelanggaran (Semester Ini)</div></div>
-    <div class="card p-4 text-center"><div class="text-2xl font-bold">${new Set(log.map(l=>l.siswaId)).size}</div><div class="text-xs text-slate-500">Siswa Terlibat</div></div>
-    <div class="card p-4 text-center"><div class="text-2xl font-bold">${log.reduce((a,l)=>a+l.poin,0)}</div><div class="text-xs text-slate-500">Total Poin Terpotong</div></div>`;
+    <div class="bg-white rounded-xl shadow p-4 text-center"><div class="text-2xl font-bold">${log.length}</div><div class="text-xs text-slate-500">Total Pelanggaran (Semester Ini)</div></div>
+    <div class="bg-white rounded-xl shadow p-4 text-center"><div class="text-2xl font-bold">${new Set(log.map(l=>l.siswaId)).size}</div><div class="text-xs text-slate-500">Siswa Terlibat</div></div>
+    <div class="bg-white rounded-xl shadow p-4 text-center"><div class="text-2xl font-bold">${log.reduce((a,l)=>a+l.poin,0)}</div><div class="text-xs text-slate-500">Total Poin Terpotong</div></div>`;
 
   const hitung = {};
   log.forEach(l=>{ hitung[l.jenis]=(hitung[l.jenis]||0)+1; });
