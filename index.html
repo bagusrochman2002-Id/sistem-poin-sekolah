@@ -280,24 +280,37 @@
 
   <!-- ===== CATAT PELANGGARAN ===== -->
   <section id="tab-catat" class="hidden">
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 max-w-2xl mx-auto">
-      <h2 class="font-bold text-slate-800 mb-1">✏️ Catat Pelanggaran Baru</h2>
-      <p class="text-xs text-slate-400 -mt-1 mb-3">Pilih siswa dan jenis pelanggaran, poin akan terpotong otomatis.</p>
-      <label class="text-sm font-medium text-slate-600">Siswa</label>
-      <select id="cSiswa" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3"></select>
+    <div class="max-w-2xl mx-auto space-y-4">
+      <div>
+        <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2">✏️ Catat Pelanggaran Baru</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Pilih siswa dan jenis pelanggaran, poin akan terpotong otomatis.</p>
+      </div>
 
-      <label class="text-sm font-medium text-slate-600">Jenis Pelanggaran</label>
-      <select id="cJenis" onchange="updatePreviewPoin()" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3"></select>
+      <!-- CARD: Data Siswa -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">👤 Data Siswa</h3>
+        <label class="text-sm font-medium text-slate-600">Siswa</label>
+        <select id="cSiswa" onchange="updatePreviewPoin()" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1"></select>
+      </div>
 
-      <div id="cPreview" class="text-sm bg-slate-50 border rounded-lg p-3 mb-3 hidden"></div>
+      <!-- CARD: Jenis Pelanggaran + Preview -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">⚠️ Jenis Pelanggaran</h3>
+        <select id="cJenis" onchange="updatePreviewPoin()" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors"></select>
+        <div id="cPreview" class="text-sm bg-slate-50 border border-slate-200 rounded-xl p-3.5 mt-3 hidden"></div>
+      </div>
 
-      <label class="text-sm font-medium text-slate-600">Tanggal Kejadian</label>
-      <input id="cTanggal" type="date" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3">
+      <!-- CARD: Detail Kejadian -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">🗓️ Detail Kejadian</h3>
+        <label class="text-sm font-medium text-slate-600">Tanggal Kejadian</label>
+        <input id="cTanggal" type="date" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3">
 
-      <label class="text-sm font-medium text-slate-600">Catatan Tambahan (opsional)</label>
-      <textarea id="cCatatan" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-4" placeholder="Kronologi singkat, saksi, dsb."></textarea>
+        <label class="text-sm font-medium text-slate-600">Catatan Tambahan (opsional)</label>
+        <textarea id="cCatatan" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1" placeholder="Kronologi singkat, saksi, dsb."></textarea>
+      </div>
 
-      <button onclick="simpanPelanggaran()" class="w-full bg-red-600 text-white py-2.5 rounded-lg font-semibold hover:bg-red-700 hover:shadow-md active:scale-[0.98] transition">Simpan Pelanggaran</button>
+      <button onclick="simpanPelanggaran()" class="w-full bg-red-600 text-white py-3 rounded-xl font-semibold shadow-md hover:bg-red-700 hover:shadow-lg active:scale-[0.98] transition text-sm">💾 Simpan Pelanggaran</button>
     </div>
   </section>
 
@@ -888,9 +901,16 @@ function updatePreviewPoin(){
   const sisa = Math.max(siswa.poin - m.poin, 0);
   const tl = tindakLanjut(sisa);
   box.classList.remove('hidden');
-  box.innerHTML = `Kategori: <b>${m.kategori}</b> — Poin dikurangi: <b>-${m.poin}</b><br>
-    Sisa poin setelah ini: <b>${sisa}</b> → <span class="badge ${tl.warna}">${tl.label}</span><br>
-    <span class="text-xs text-slate-600">${tl.desc}</span>`;
+  box.innerHTML = `
+    <div class="flex items-center justify-between flex-wrap gap-2 mb-1.5">
+      <span class="text-slate-600">Kategori: <b class="text-slate-800">${m.kategori}</b> &nbsp;•&nbsp; Poin dikurangi: <b class="text-red-600">-${m.poin}</b></span>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="text-slate-600">Sisa poin setelah ini: <b class="text-slate-800">${sisa}</b></span>
+      <span>→</span>
+      <span class="badge ${tl.warna}">${tl.label}</span>
+    </div>
+    <p class="text-xs text-slate-500 mt-2">${tl.desc}</p>`;
 }
 async function simpanPelanggaran(){
   if(!requireEdit()) return;
