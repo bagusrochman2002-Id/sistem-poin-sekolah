@@ -97,10 +97,30 @@
       <button id="confirmModalCancel" class="px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition">Batal</button>
       <button id="confirmModalOk" class="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 text-white hover:bg-red-700 hover:shadow-md active:scale-95 transition">Ya, Lanjutkan</button>
     </div>
+</div>
+</div>
+
+<!-- ===== MODAL EDIT SISWA ===== -->
+<div id="modalEditSiswa" class="fixed inset-0 z-[90] hidden items-center justify-center px-4" style="background:rgba(15,23,42,.5);backdrop-filter:blur(2px);">
+  <div id="modalEditSiswaBox" class="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 scale-95 opacity-0 transition-all duration-150">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 bg-blue-100 text-[#1e3a5f]">✏️</div>
+      <h3 class="font-bold text-slate-800">Edit Data Siswa</h3>
+    </div>
+    <input type="hidden" id="esId">
+    <label class="text-sm font-medium text-slate-600">Nama</label>
+    <input id="esNama" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3">
+    <label class="text-sm font-medium text-slate-600">NISN / NIS</label>
+    <input id="esNisn" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3">
+    <label class="text-sm font-medium text-slate-600">Kelas</label>
+    <input id="esKelas" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-4">
+    <div class="flex justify-end gap-2">
+      <button onclick="closeEditSiswa()" class="px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition">Batal</button>
+      <button onclick="simpanEditSiswa()" class="px-4 py-2 rounded-lg text-sm font-semibold bg-[#1e3a5f] text-white hover:bg-[#16304d] hover:shadow-md active:scale-95 transition">Simpan</button>
+    </div>
   </div>
 </div>
 
-<!-- ===== MODAL LOGIN ===== -->
 <div id="modalLogin" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4" style="background:linear-gradient(135deg,#0f2540 0%,#1e3a5f 55%,#254a75 100%);">
   <!-- dekorasi lingkaran lembut -->
   <div class="pointer-events-none absolute -top-24 -left-24 w-72 h-72 rounded-full bg-white/5"></div>
@@ -893,10 +913,50 @@ async function hapusSiswa(id){
   DB.log = DB.log.filter(l=>l.siswaId!==id);
   renderSiswaTable(); renderDashboard();
 }
+function editSiswa(id){
+  if(!requireEdit()) return;
+  const s = DB.siswa.find(x=>x.id===id);
+  if(!s) return;
+  document.getElementById('esId').value = s.id;
+  document.getElementById('esNama').value = s.nama;
+  document.getElementById('esNisn').value = s.nisn;
+  document.getElementById('esKelas').value = s.kelas;
+  const modal = document.getElementById('modalEditSiswa');
+  const box = document.getElementById('modalEditSiswaBox');
+  modal.classList.remove('hidden'); modal.classList.add('flex');
+  requestAnimationFrame(()=>{ box.classList.remove('scale-95','opacity-0'); });
+}
+function closeEditSiswa(){
+  const modal = document.getElementById('modalEditSiswa');
+  const box = document.getElementById('modalEditSiswaBox');
+  box.classList.add('scale-95','opacity-0');
+  setTimeout(()=>{ modal.classList.add('hidden'); modal.classList.remove('flex'); }, 150);
+}
+async function simpanEditSiswa(){
+  if(!requireEdit()) return;
+  const id = document.getElementById('esId').value;
+  const nama = document.getElementById('esNama').value.trim();
+  const nisn = document.getElementById('esNisn').value.trim();
+  const kelas = document.getElementById('esKelas').value.trim();
+  if(!nama||!kelas){ toast('Nama dan kelas wajib diisi', 'warning'); return; }
+  if(nama.length < 3){ toast('Nama terlalu pendek', 'warning'); return; }
+  if(nisn && DB.siswa.some(s=>s.id!==id && s.nisn && s.nisn===nisn)){
+    if(!(await confirmModal(`NISN "${nisn}" sudah dipakai oleh siswa lain. Tetap simpan?`, {danger:false, okText:'Tetap Simpan'}))) return;
+  }
+  const { error } = await db.from('siswa').update({nama, nisn, kelas}).eq('id', id);
+  if(error){ toast('Gagal menyimpan perubahan: '+error.message, 'error'); return; }
+  const s = DB.siswa.find(x=>x.id===id);
+  if(s){ s.nama = nama; s.nisn = nisn; s.kelas = kelas; }
+  // sinkronkan nama & kelas di cache riwayat supaya tampilan tetap konsisten
+  DB.log.forEach(l=>{ if(l.siswaId===id){ l.namaSiswa = nama; l.kelas = kelas; } });
+  closeEditSiswa();
+  toast('Data siswa berhasil diperbarui.', 'success');
+  renderSiswaTable(); renderDashboard();
+}
 function renderSiswaTable(){
   const q = document.getElementById('siswaSearch').value.toLowerCase();
   const list = DB.siswa.filter(s=>s.nama.toLowerCase().includes(q)||s.nisn.includes(q)||s.kelas.toLowerCase().includes(q));
-  const aksiTd = canEdit() ? (s)=>`<td><button onclick="hapusSiswa('${s.id}')" class="text-red-600 text-xs font-semibold hover:underline transition">Hapus</button></td>` : ()=>'';
+  const aksiTd = canEdit() ? (s)=>`<td><button onclick="editSiswa('${s.id}')" class="text-[#1e3a5f] text-xs font-semibold hover:underline transition mr-3">Edit</button><button onclick="hapusSiswa('${s.id}')" class="text-red-600 text-xs font-semibold hover:underline transition">Hapus</button></td>` : ()=>'';
   document.getElementById('siswaTableBody').innerHTML = list.map(s=>`
     <tr class="hover:bg-blue-50 transition-colors">
       <td>${s.nama}</td><td>${s.nisn}</td><td>${s.kelas}</td><td class="font-bold">${s.poin}</td>
