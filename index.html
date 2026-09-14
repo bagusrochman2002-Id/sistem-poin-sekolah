@@ -341,7 +341,13 @@
           <div>
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">👤 Data Siswa</h3>
             <label class="text-sm font-medium text-slate-600">Siswa</label>
-            <select id="cSiswa" onchange="updatePreviewPoin()" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1"></select>
+            <div class="relative mt-1">
+              <input id="cSiswaSearch" type="text" autocomplete="off" placeholder="Ketik nama siswa..."
+                oninput="onCSiswaSearchInput()" onfocus="onCSiswaSearchInput()"
+                class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors">
+              <input type="hidden" id="cSiswa" value="">
+              <div id="cSiswaDropdown" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+            </div>
             <div id="cSiswaInfo" class="hidden mt-2">
               <span class="inline-block text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full mr-2 mb-1">Kelas: <b id="cSiswaKelas" class="text-slate-800"></b></span>
               <span class="inline-block text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full mb-1">Sisa Poin: <b id="cSiswaPoin" class="text-slate-800"></b></span>
@@ -428,7 +434,13 @@
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
         <h2 class="font-bold text-slate-800 mb-3">📝 Buat Surat</h2>
         <label class="text-sm font-medium text-slate-600">Siswa</label>
-        <select id="suSiswa" onchange="suggestSurat()" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors mt-1 mb-3"></select>
+        <div class="relative mb-3 mt-1">
+          <input id="suSiswaSearch" type="text" autocomplete="off" placeholder="Ketik nama siswa..."
+            oninput="onSuSiswaSearchInput()" onfocus="onSuSiswaSearchInput()"
+            class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors">
+          <input type="hidden" id="suSiswa" value="">
+          <div id="suSiswaDropdown" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+        </div>
 
         <div id="suSaran" class="text-xs bg-slate-50 border rounded-lg p-2 mb-3 hidden"></div>
 
@@ -1017,9 +1029,9 @@ function renderSiswaTable(){
 
 // ================= CATAT PELANGGARAN =================
 function renderCatatForm(){
-  const selSiswa = document.getElementById('cSiswa');
-  selSiswa.innerHTML = DB.siswa.slice().sort((a,b)=>a.nama.localeCompare(b.nama))
-    .map(s=>`<option value="${s.id}">${s.nama}</option>`).join('') || '<option value="">-- Belum ada siswa --</option>';
+  document.getElementById('cSiswa').value = '';
+  document.getElementById('cSiswaSearch').value = '';
+  document.getElementById('cSiswaDropdown').classList.add('hidden');
   const selJenis = document.getElementById('cJenis');
   const grup = {Ringan:[],Sedang:[],Berat:[]};
   MASTER.forEach(m=>grup[m.kategori].push(m));
@@ -1029,6 +1041,44 @@ function renderCatatForm(){
   document.getElementById('cTanggal').value = new Date().toISOString().slice(0,10);
   updatePreviewPoin();
 }
+function onCSiswaSearchInput(){
+  const q = document.getElementById('cSiswaSearch').value.trim().toLowerCase();
+  // Jika teks di kotak search tidak lagi cocok dengan siswa yang sudah dipilih, batalkan pilihan.
+  const selectedId = document.getElementById('cSiswa').value;
+  if(selectedId){
+    const selected = DB.siswa.find(s=>s.id===selectedId);
+    if(!selected || !q || selected.nama.toLowerCase() !== q){
+      document.getElementById('cSiswa').value = '';
+      updatePreviewPoin();
+    }
+  }
+  const dropdown = document.getElementById('cSiswaDropdown');
+  if(!q){ dropdown.classList.add('hidden'); dropdown.innerHTML=''; return; }
+  const hasil = DB.siswa.filter(s=>s.nama.toLowerCase().includes(q)||s.nisn.includes(q)||s.kelas.toLowerCase().includes(q))
+    .sort((a,b)=>a.nama.localeCompare(b.nama)).slice(0,30);
+  dropdown.innerHTML = hasil.length ? hasil.map(s=>`
+    <div onclick="pilihCSiswa('${s.id}')" class="px-3 py-2 text-sm hover:bg-blue-50 cursor-pointer flex justify-between items-center gap-2">
+      <span class="text-slate-800">${s.nama}</span>
+      <span class="text-xs text-slate-400 shrink-0">${s.kelas} • poin ${s.poin}</span>
+    </div>`).join('') : '<div class="px-3 py-2 text-sm text-slate-400">Siswa tidak ditemukan</div>';
+  dropdown.classList.remove('hidden');
+}
+function pilihCSiswa(id){
+  const s = DB.siswa.find(x=>x.id===id);
+  if(!s) return;
+  document.getElementById('cSiswa').value = id;
+  document.getElementById('cSiswaSearch').value = s.nama;
+  document.getElementById('cSiswaDropdown').classList.add('hidden');
+  updatePreviewPoin();
+}
+document.addEventListener('click', function(e){
+  const wrap = document.getElementById('cSiswaSearch');
+  const dropdown = document.getElementById('cSiswaDropdown');
+  if(!wrap || !dropdown) return;
+  if(e.target !== wrap && !dropdown.contains(e.target)){
+    dropdown.classList.add('hidden');
+  }
+});
 function updatePreviewPoin(){
   const kode = parseInt(document.getElementById('cJenis').value);
   const m = MASTER.find(x=>x.kode===kode);
@@ -1159,12 +1209,49 @@ function renderMaster(){
 
 // ================= CETAK SURAT =================
 function renderSuratForm(){
-  const sel = document.getElementById('suSiswa');
-  sel.innerHTML = DB.siswa.slice().sort((a,b)=>a.nama.localeCompare(b.nama))
-    .map(s=>`<option value="${s.id}">${s.nama} — ${s.kelas} (poin: ${s.poin})</option>`).join('') || '<option value="">-- Belum ada siswa --</option>';
+  document.getElementById('suSiswa').value = '';
+  document.getElementById('suSiswaSearch').value = '';
+  document.getElementById('suSiswaDropdown').classList.add('hidden');
   document.getElementById('suTanggal').value = new Date().toISOString().slice(0,10);
   suggestSurat();
 }
+function onSuSiswaSearchInput(){
+  const q = document.getElementById('suSiswaSearch').value.trim().toLowerCase();
+  const selectedId = document.getElementById('suSiswa').value;
+  if(selectedId){
+    const selected = DB.siswa.find(s=>s.id===selectedId);
+    if(!selected || !q || selected.nama.toLowerCase() !== q){
+      document.getElementById('suSiswa').value = '';
+      suggestSurat();
+    }
+  }
+  const dropdown = document.getElementById('suSiswaDropdown');
+  if(!q){ dropdown.classList.add('hidden'); dropdown.innerHTML=''; return; }
+  const hasil = DB.siswa.filter(s=>s.nama.toLowerCase().includes(q)||s.nisn.includes(q)||s.kelas.toLowerCase().includes(q))
+    .sort((a,b)=>a.nama.localeCompare(b.nama)).slice(0,30);
+  dropdown.innerHTML = hasil.length ? hasil.map(s=>`
+    <div onclick="pilihSuSiswa('${s.id}')" class="px-3 py-2 text-sm hover:bg-blue-50 cursor-pointer flex justify-between items-center gap-2">
+      <span class="text-slate-800">${s.nama}</span>
+      <span class="text-xs text-slate-400 shrink-0">${s.kelas} • poin ${s.poin}</span>
+    </div>`).join('') : '<div class="px-3 py-2 text-sm text-slate-400">Siswa tidak ditemukan</div>';
+  dropdown.classList.remove('hidden');
+}
+function pilihSuSiswa(id){
+  const s = DB.siswa.find(x=>x.id===id);
+  if(!s) return;
+  document.getElementById('suSiswa').value = id;
+  document.getElementById('suSiswaSearch').value = s.nama;
+  document.getElementById('suSiswaDropdown').classList.add('hidden');
+  suggestSurat();
+}
+document.addEventListener('click', function(e){
+  const wrap = document.getElementById('suSiswaSearch');
+  const dropdown = document.getElementById('suSiswaDropdown');
+  if(!wrap || !dropdown) return;
+  if(e.target !== wrap && !dropdown.contains(e.target)){
+    dropdown.classList.add('hidden');
+  }
+});
 function suggestSurat(){
   const siswa = DB.siswa.find(s=>s.id===document.getElementById('suSiswa').value);
   const box = document.getElementById('suSaran');
