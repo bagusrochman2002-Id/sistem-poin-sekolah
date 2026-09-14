@@ -545,7 +545,7 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Role yang boleh menambah/mengubah/menghapus data. Role lain (mis. BK,
 // Kepala Sekolah) hanya bisa melihat dashboard, riwayat, rekap & statistik.
-const ROLE_EDIT = ['Kesiswaan', 'Wali Kelas', 'Admin'];
+const ROLE_EDIT = ['Kesiswaan', 'BK', 'Wali Kelas', 'Admin'];
 function canEdit(){ return !!(DB.user && ROLE_EDIT.includes(DB.user.role)); }
 function requireEdit(){
   if(!canEdit()){ toast('Akun Anda ("'+(DB.user?DB.user.role:'-')+'") hanya memiliki akses lihat (read-only).', 'warning'); return false; }
