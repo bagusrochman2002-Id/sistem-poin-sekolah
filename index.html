@@ -82,7 +82,7 @@
   @keyframes tabFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
   #tab-dashboard:not(.hidden),#tab-siswa:not(.hidden),#tab-catat:not(.hidden),#tab-riwayat:not(.hidden),
   #tab-master:not(.hidden),#tab-surat:not(.hidden),#tab-rekapkelas:not(.hidden),#tab-statistik:not(.hidden),
-  #tab-laporan:not(.hidden),
+  #tab-laporan:not(.hidden),#tab-audit:not(.hidden),
   #tab-akun:not(.hidden),#tab-pengaturan:not(.hidden){animation:tabFadeIn .28s ease;}
 </style>
 </head>
@@ -125,6 +125,28 @@
     <div class="flex justify-end gap-2">
       <button onclick="closeEditSiswa()" class="px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition">Batal</button>
       <button onclick="simpanEditSiswa()" class="px-4 py-2 rounded-lg text-sm font-semibold bg-[#1e3a5f] text-white hover:bg-[#16304d] hover:shadow-md active:scale-95 transition">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL RIWAYAT PER SISWA ===== -->
+<div id="modalRiwayatSiswa" class="fixed inset-0 z-[90] hidden items-center justify-center px-4" style="background:rgba(15,23,42,.5);backdrop-filter:blur(2px);">
+  <div id="modalRiwayatSiswaBox" class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl p-6 scale-95 opacity-0 transition-all duration-150">
+    <div class="flex items-start justify-between gap-3 mb-4">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 bg-blue-100 text-[#1e3a5f]">🕘</div>
+        <div class="min-w-0">
+          <h3 id="rsNama" class="font-bold text-slate-800 truncate">Nama Siswa</h3>
+          <p id="rsSub" class="text-xs text-slate-500"></p>
+        </div>
+      </div>
+      <button onclick="closeRiwayatSiswa()" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center shrink-0">✕</button>
+    </div>
+    <div id="rsRingkasan" class="grid grid-cols-3 gap-2 mb-4"></div>
+    <div class="overflow-x-auto overflow-y-auto max-h-[45vh] table-wrap">
+      <table><thead><tr>
+        <th class="text-xs uppercase tracking-wide">Tanggal</th><th class="text-xs uppercase tracking-wide">Kategori</th><th class="text-xs uppercase tracking-wide">Pelanggaran</th><th class="text-xs uppercase tracking-wide">Poin</th><th class="text-xs uppercase tracking-wide">Catatan</th><th class="text-xs uppercase tracking-wide">Dicatat oleh</th><th class="edit-only text-xs uppercase tracking-wide">Aksi</th>
+      </tr></thead><tbody id="rsTableBody"></tbody></table>
     </div>
   </div>
 </div>
@@ -239,6 +261,7 @@
       <button class="tabBtn sidebar-link w-full text-left" data-tab="statistik" onclick="switchTab('statistik')"><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span><span>Statistik</span></button>
       <button class="tabBtn sidebar-link w-full text-left" data-tab="laporan" onclick="switchTab('laporan')"><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg></span><span>Laporan Semester</span></button>
       <hr class="my-2 border-slate-200">
+      <button class="tabBtn sidebar-link w-full text-left audit-only" data-tab="audit" onclick="switchTab('audit')"><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0"><path d="M9 12h6"/><path d="M9 16h6"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M14 3v5h5"/></svg></span><span>Audit Trail</span></button>
       <button class="tabBtn sidebar-link w-full text-left admin-only" data-tab="akun" onclick="switchTab('akun')"><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg></span><span>Kelola Akun</span></button>
       <button class="tabBtn sidebar-link w-full text-left edit-only" data-tab="pengaturan" onclick="switchTab('pengaturan')"><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span>Pengaturan</span></button>
     </div>
@@ -522,6 +545,34 @@
     <div id="laporanBody"></div>
   </section>
 
+  <!-- ===== AUDIT TRAIL ===== -->
+  <section id="tab-audit" class="hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <div class="flex flex-wrap gap-3 items-center mb-1">
+        <h2 class="font-bold text-slate-800 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 shrink-0"><path d="M9 12h6"/><path d="M9 16h6"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M14 3v5h5"/></svg><span>Audit Trail (Edit &amp; Hapus)</span></h2>
+        <input id="auSearch" oninput="renderAudit()" placeholder="Cari nama siswa/pelaku..." class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm">
+        <select id="auAksi" onchange="renderAudit()" class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm">
+          <option value="">Semua Aksi</option>
+          <option value="edit">Edit</option>
+          <option value="hapus">Hapus</option>
+        </select>
+        <select id="auEntitas" onchange="renderAudit()" class="border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f] transition-colors text-sm">
+          <option value="">Semua Data</option>
+          <option value="siswa">Data Siswa</option>
+          <option value="pelanggaran_log">Riwayat Pelanggaran</option>
+          <option value="akun">Akun</option>
+        </select>
+        <button onclick="renderAudit()" class="ml-auto bg-slate-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-700 hover:shadow-md active:scale-95 transition">🔄 Muat Ulang</button>
+      </div>
+      <p class="text-xs text-slate-400 mb-3">Jejak setiap perubahan &amp; penghapusan data penting. Catatan ini tidak bisa diubah atau dihapus siapa pun, termasuk Admin.</p>
+      <div class="overflow-x-auto overflow-y-auto max-h-[65vh] table-wrap">
+        <table><thead><tr>
+          <th class="text-xs uppercase tracking-wide">Waktu</th><th class="text-xs uppercase tracking-wide">Aksi</th><th class="text-xs uppercase tracking-wide">Data</th><th class="text-xs uppercase tracking-wide">Ringkasan</th><th class="text-xs uppercase tracking-wide">Pelaku</th>
+        </tr></thead><tbody id="auditTableBody"><tr><td colspan="5" class="text-center text-slate-400 py-6">Memuat...</td></tr></tbody></table>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== KELOLA AKUN (khusus Admin) ===== -->
   <section id="tab-akun" class="hidden">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4 max-w-2xl">
@@ -667,6 +718,23 @@ function requireCatat(){
   return true;
 }
 
+// Siapa yang boleh melihat menu Audit Trail: semua yang punya akses edit,
+// ditambah Kepala Sekolah untuk keperluan pengawasan.
+function canViewAudit(){ return !!(DB.user && (canEdit() || DB.user.role==='Kepala Sekolah')); }
+
+// Catat satu entri ke tabel audit_log (best-effort, tidak menghentikan
+// alur utama kalau gagal — hanya tercatat di console).
+async function catatAudit(aksi, entitas, entitasId, ringkasan, detail){
+  try{
+    const { error } = await db.from('audit_log').insert({
+      aksi, entitas, entitas_id: entitasId ? String(entitasId) : null,
+      ringkasan, detail: detail || null,
+      pelaku: DB.user ? DB.user.nama : '-', peran: DB.user ? DB.user.role : '-'
+    });
+    if(error) console.warn('Gagal mencatat audit trail:', error.message);
+  }catch(err){ console.warn('Gagal mencatat audit trail:', err); }
+}
+
 // ================= IKON AKSI (edit/hapus tanpa teks) =================
 const ICON_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg>';
 const ICON_TRASH = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
@@ -769,6 +837,8 @@ function applyRoleUI(){
   catatOnly.forEach(el => { el.style.display = canCatat() ? '' : 'none'; });
   const adminOnly = document.querySelectorAll('.admin-only');
   adminOnly.forEach(el => { el.style.display = isAdmin() ? '' : 'none'; });
+  const auditOnly = document.querySelectorAll('.audit-only');
+  auditOnly.forEach(el => { el.style.display = canViewAudit() ? '' : 'none'; });
 }
 
 // ================= AMBIL DATA DARI SUPABASE =================
@@ -879,6 +949,7 @@ function switchTab(tab){
   if(tab==='rekapkelas') renderRekapKelas();
   if(tab==='statistik') renderStatistik();
   if(tab==='laporan') renderLaporan();
+  if(tab==='audit'){ if(!canViewAudit()){ switchTab('dashboard'); return; } renderAudit(); }
   if(tab==='akun') renderAkun();
 }
 
@@ -936,7 +1007,7 @@ function renderDashboard(){
   tbody.innerHTML = list.map(s=>{
     const tl = tindakLanjut(s.poin);
     return `<tr class="hover:bg-blue-50 transition-colors">
-      <td class="font-medium">${s.nama}</td><td>${s.nisn}</td><td>${s.kelas}</td>
+      <td><button onclick="lihatRiwayatSiswa('${s.id}')" class="font-medium text-[#1e3a5f] hover:underline text-left">${s.nama}</button></td><td>${s.nisn}</td><td>${s.kelas}</td>
       <td class="font-bold">${s.poin}</td>
       <td><span class="badge ${tl.warna}">${tl.label}</span></td>
       <td class="text-xs text-slate-600">${tl.desc}</td>
@@ -981,11 +1052,14 @@ async function tambahSiswaBulk(){
 }
 async function hapusSiswa(id){
   if(!requireEdit()) return;
+  const siswa = DB.siswa.find(s=>s.id===id);
   if(!(await confirmModal('Hapus siswa ini beserta riwayat pelanggarannya?'))) return;
+  const jumlahLog = DB.log.filter(l=>l.siswaId===id).length;
   const { error } = await db.from('siswa').delete().eq('id', id);
   if(error){ toast('Gagal menghapus: '+error.message, 'error'); return; }
   DB.siswa = DB.siswa.filter(s=>s.id!==id);
   DB.log = DB.log.filter(l=>l.siswaId!==id);
+  if(siswa) catatAudit('hapus', 'siswa', id, `Hapus siswa: ${siswa.nama} (${siswa.kelas}) beserta ${jumlahLog} riwayat pelanggaran`, { siswa, jumlahLog });
   renderSiswaTable(); renderDashboard();
 }
 function editSiswa(id){
@@ -1018,12 +1092,14 @@ async function simpanEditSiswa(){
   if(nisn && DB.siswa.some(s=>s.id!==id && s.nisn && s.nisn===nisn)){
     if(!(await confirmModal(`NISN "${nisn}" sudah dipakai oleh siswa lain. Tetap simpan?`, {danger:false, okText:'Tetap Simpan'}))) return;
   }
+  const s = DB.siswa.find(x=>x.id===id);
+  const sebelum = s ? { nama: s.nama, nisn: s.nisn, kelas: s.kelas } : null;
   const { error } = await db.from('siswa').update({nama, nisn, kelas}).eq('id', id);
   if(error){ toast('Gagal menyimpan perubahan: '+error.message, 'error'); return; }
-  const s = DB.siswa.find(x=>x.id===id);
   if(s){ s.nama = nama; s.nisn = nisn; s.kelas = kelas; }
   // sinkronkan nama & kelas di cache riwayat supaya tampilan tetap konsisten
   DB.log.forEach(l=>{ if(l.siswaId===id){ l.namaSiswa = nama; l.kelas = kelas; } });
+  catatAudit('edit', 'siswa', id, `Edit data siswa: ${nama} (${kelas})`, { sebelum, sesudah: {nama, nisn, kelas} });
   closeEditSiswa();
   toast('Data siswa berhasil diperbarui.', 'success');
   renderSiswaTable(); renderDashboard();
@@ -1034,9 +1110,58 @@ function renderSiswaTable(){
   const aksiTd = canEdit() ? (s)=>`<td><div class="flex items-center gap-1"><button onclick="editSiswa('${s.id}')" title="Edit" class="icon-btn">${ICON_EDIT}</button><button onclick="hapusSiswa('${s.id}')" title="Hapus" class="icon-btn danger">${ICON_TRASH}</button></div></td>` : ()=>'';
   document.getElementById('siswaTableBody').innerHTML = list.map(s=>`
     <tr class="hover:bg-blue-50 transition-colors">
-      <td>${s.nama}</td><td>${s.nisn}</td><td>${s.kelas}</td><td class="font-bold">${s.poin}</td>
+      <td><button onclick="lihatRiwayatSiswa('${s.id}')" class="font-medium text-[#1e3a5f] hover:underline text-left">${s.nama}</button></td><td>${s.nisn}</td><td>${s.kelas}</td><td class="font-bold">${s.poin}</td>
       ${aksiTd(s)}
     </tr>`).join('') || '<tr><td colspan="5" class="text-center text-slate-400 py-6">Belum ada data siswa</td></tr>';
+}
+
+// ================= RIWAYAT PER SISWA (modal) =================
+function lihatRiwayatSiswa(id){
+  const s = DB.siswa.find(x=>x.id===id);
+  if(!s) return;
+  const tl = tindakLanjut(s.poin);
+  const riwayat = DB.log.filter(l=>l.siswaId===id).sort((a,b)=> b.tanggal.localeCompare(a.tanggal));
+  const totalPotong = riwayat.reduce((sum,l)=> sum+l.poin, 0);
+
+  document.getElementById('rsNama').textContent = s.nama;
+  document.getElementById('rsSub').textContent = `${s.kelas}${s.nisn ? ' • NISN '+s.nisn : ''}`;
+  document.getElementById('rsRingkasan').innerHTML = `
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+      <div class="text-lg font-bold text-slate-800">${s.poin}</div>
+      <div class="text-[11px] text-slate-500">Sisa Poin</div>
+    </div>
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+      <div class="text-lg font-bold text-red-600">${totalPotong}</div>
+      <div class="text-[11px] text-slate-500">Total Poin Terpotong</div>
+    </div>
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+      <div class="text-lg font-bold text-slate-800">${riwayat.length}</div>
+      <div class="text-[11px] text-slate-500">Jumlah Kasus</div>
+    </div>`;
+
+  const aksiTd = canEdit()
+    ? (l)=>`<td><button onclick="hapusLog('${l.id}').then(()=>lihatRiwayatSiswa('${id}'))" title="Hapus" class="icon-btn danger">${ICON_TRASH}</button></td>`
+    : ()=>'';
+  document.getElementById('rsTableBody').innerHTML = riwayat.map(l=>`
+    <tr class="hover:bg-blue-50 transition-colors">
+      <td>${l.tanggal}</td>
+      <td><span class="badge ${l.kategori==='Berat'?'bg-red-600 text-white':l.kategori==='Sedang'?'bg-amber-400 text-slate-900':'bg-green-500 text-white'}">${l.kategori}</span></td>
+      <td>${l.jenis}</td><td class="font-bold text-red-600">-${l.poin}</td>
+      <td class="text-xs">${l.catatan||'-'}</td>
+      <td class="text-xs">${l.pencatat} (${l.role})</td>
+      ${aksiTd(l)}
+    </tr>`).join('') || '<tr><td colspan="7" class="text-center text-slate-400 py-6">Belum ada riwayat pelanggaran untuk siswa ini</td></tr>';
+
+  const modal = document.getElementById('modalRiwayatSiswa');
+  const box = document.getElementById('modalRiwayatSiswaBox');
+  modal.classList.remove('hidden'); modal.classList.add('flex');
+  requestAnimationFrame(()=>{ box.classList.remove('scale-95','opacity-0'); });
+}
+function closeRiwayatSiswa(){
+  const modal = document.getElementById('modalRiwayatSiswa');
+  const box = document.getElementById('modalRiwayatSiswaBox');
+  box.classList.add('scale-95','opacity-0');
+  setTimeout(()=>{ modal.classList.add('hidden'); modal.classList.remove('flex'); }, 150);
 }
 
 // ================= CATAT PELANGGARAN =================
@@ -1191,6 +1316,7 @@ async function hapusLog(id){
   const siswa = DB.siswa.find(s=>s.id===result.siswa_id);
   if(siswa) siswa.poin = result.poin_baru;
   DB.log = DB.log.filter(l=>l.id!==id);
+  catatAudit('hapus', 'pelanggaran_log', id, `Hapus log pelanggaran: ${log.namaSiswa} - ${log.jenis} (${log.tanggal}, -${log.poin} poin)`, { log });
   renderRiwayat(); renderDashboard();
 }
 function exportExcel(){
@@ -1560,6 +1686,32 @@ function exportLaporanExcel(){
   XLSX.writeFile(wb, `laporan-akhir-semester-${semester.replace(/\s+/g,'_')}.xlsx`);
 }
 
+// ================= AUDIT TRAIL =================
+async function renderAudit(){
+  const tbody = document.getElementById('auditTableBody');
+  tbody.innerHTML = '<tr><td colspan="5" class="text-center text-slate-400 py-6">Memuat...</td></tr>';
+  const { data, error } = await db.from('audit_log').select('*').order('created_at', {ascending:false}).limit(300);
+  if(error){ tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-6">Gagal memuat: ${error.message}</td></tr>`; return; }
+
+  const q = document.getElementById('auSearch').value.toLowerCase();
+  const aksiF = document.getElementById('auAksi').value;
+  const entitasF = document.getElementById('auEntitas').value;
+  const entitasLabel = {siswa:'Data Siswa', pelanggaran_log:'Riwayat Pelanggaran', akun:'Akun'};
+
+  const list = data.filter(a =>
+    (a.ringkasan.toLowerCase().includes(q) || a.pelaku.toLowerCase().includes(q)) &&
+    (!aksiF || a.aksi===aksiF) && (!entitasF || a.entitas===entitasF));
+
+  tbody.innerHTML = list.map(a=>`
+    <tr class="hover:bg-blue-50 transition-colors">
+      <td class="text-xs whitespace-nowrap">${new Date(a.created_at).toLocaleString('id-ID')}</td>
+      <td><span class="badge ${a.aksi==='hapus'?'bg-red-600 text-white':'bg-amber-400 text-slate-900'}">${a.aksi==='hapus'?'Hapus':'Edit'}</span></td>
+      <td class="text-xs">${entitasLabel[a.entitas]||a.entitas}</td>
+      <td class="text-xs">${a.ringkasan}</td>
+      <td class="text-xs">${a.pelaku} (${a.peran})</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="text-center text-slate-400 py-6">Belum ada catatan audit</td></tr>';
+}
+
 // ================= KELOLA AKUN (khusus Admin) =================
 async function renderAkun(){
   if(!requireAdmin()) { switchTab('dashboard'); return; }
@@ -1592,6 +1744,7 @@ async function hapusProfil(uid, nama){
   if(!(await confirmModal(`Hapus akun "${nama}" dari daftar pengguna? Login Auth-nya sendiri (di Supabase Authentication) tidak ikut terhapus — hanya kehilangan akses ke aplikasi ini.`))) return;
   const { error } = await db.from('profiles').delete().eq('id', uid);
   if(error){ toast('Gagal menghapus: '+error.message, 'error'); return; }
+  catatAudit('hapus', 'akun', uid, `Hapus akun: ${nama}`, { uid, nama });
   renderAkun();
 }
 
